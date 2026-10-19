@@ -1,130 +1,152 @@
-# 倾盖如故
+# 倾盖如故：本地优先的开源录音整理与线下活动交流工具
 
-把每一次见面留下来。
+**从初见，到如故。把每一次见面留下来。**
 
-Android 负责本地录音与私人 AI 整理，微信小程序负责本场参与者与已发布回顾，轻量 API 只保存共享数据。第一版仅支持阿里云百炼 BYOK，不含支付。
+**倾盖如故（QingGaiRuGu / QingGai）** 帮你记住线下见面后「谁来了、聊了什么、以后怎么找回来」。组织者用 Android App 录音，通过自己配置的阿里云百炼整理转写、摘要、话题与行动项；参与者用微信小程序扫码加入、填写「关于我」，按本场设置认识彼此，并查看主办方发布的回顾。
 
-## 本地环境
+录音原文件、完整转写和私人摘要长期保存在用户手机，**不上传倾盖如故服务器**。AI 整理需要联网：仅在用户主动发起时，录音临时发送至用户配置的百炼服务处理。
 
-- Node.js 22.13+（本机 24.16.0）、pnpm 11.17.0、Java 21。
-- Expo SDK 58，React Native 0.88，React 19.3；按 Expo 官方版本矩阵锁定。
-- Taro 4.3，React 18（与 Mobile 各自管理 React 版本）。
-- Android SDK 本机位置：`/opt/homebrew/share/android-commandlinetools`。
-- Android 构建已安装所需平台、Build Tools 37 与 NDK 27.1；尚无连接设备。
-- 微信开发者工具：`/Applications/wechatwebdevtools.app`。
-- PostgreSQL 16 已安装；不使用 Docker。
+[MIT 开源](LICENSE) · [查看源码](https://github.com/congcong-ai/qinggairugu) · [Android 国内下载](https://gitcode.com/xixisys/qinggairugu-releases/releases) · [常见问答](#常见问答) · [本地开发](docs/LOCAL_DEVELOPMENT.md) · [隐私说明](docs/PRIVACY_POLICY.md)
+
+## 倾盖如故是什么？
+
+倾盖如故把**本地录音、AI 整理、活动扫码加入、参与者自我介绍和会后回顾**放进同一场交流中。它适合希望保留对话内容、又希望现场的人能互相认识的小型线下活动。
+
+「倾盖如故」指初次相见，却像认识了很久。古人停车相谈，车盖相倾，一见如故；今天，可以是一杯咖啡、一本书，或一个共同的灵感。
+
+## 适合谁？可以解决什么问题？
+
+| 使用场景                          | 组织者可以做什么                                 | 参与者可以做什么                         |
+| --------------------------------- | ------------------------------------------------ | ---------------------------------------- |
+| Coffee Chat、创业者交流、小型沙龙 | 记录对话，整理观点与后续行动，确认后分享回顾     | 扫码介绍自己，按本场可见范围了解同场的人 |
+| 读书会、AI 分享、培训             | 留下讨论内容，整理主要话题和回顾                 | 专心听与聊，发布后再查看本场回顾         |
+| 客户拜访、商务会谈、一对一交流    | 本地保留录音与私人备注，检索自己设备上的历史记录 | 可由组织者将参与者资料设为仅组织者可见   |
+
+**来参加：别只记得「那个人很有意思」。** 微信扫码加入，留下一句「关于我」；无需下载 App，也无需手机号、邮箱或密码注册。
+
+**来组织：把人聚在一起，把精彩留下来。** 不用注册就能开始本地录音；一键让大家扫码加入，AI 整理后由你决定分享哪些回顾。
+
+## 核心能力
+
+- **Android 本地录音**：开始、暂停、继续、完成，支持后台与锁屏录音；录音与记录保存在手机。
+- **AI 转写与整理**：使用用户自己的阿里云百炼 API Key，生成转写、发言人区分、摘要、话题与行动项。
+- **微信扫码加入**：组织者展示本场二维码，参与者填写「关于我」，可选择保存资料复用或仅本场使用。
+- **本场参与者展示**：支持「本场参与者互相可见」与「仅组织者可见」，不做全平台找人。
+- **发言人与参与者对应**：组织者可把本场发言人手动匹配到参与者，不做长期声纹识别。
+- **本地历史检索**：在自己的设备记录中搜索，AI 回答尽量附上场次、时间和发言人来源。
+- **确认后分享回顾**：私人整理结果不会自动发布，组织者查看并确认后，参与者才能在小程序看到共享回顾。
+
+## 数据存在哪里？录音是否会上传？
+
+倾盖如故采用本地优先架构；本地保存与 AI 联网处理是两个不同环节。
+
+| 数据                                         | 保存或处理位置                | 什么时候发送                                           |
+| -------------------------------------------- | ----------------------------- | ------------------------------------------------------ |
+| 原始录音、完整转写、私人摘要、备注与搜索向量 | 用户手机文件系统与本地 SQLite | 不上传倾盖如故服务器；不提供自动云备份                 |
+| 录音的 AI 转写与整理                         | 用户配置的阿里云百炼          | 用户主动发起 AI 整理时，手机直接临时发送录音供模型处理 |
+| AI 搜索的问题与相关原文片段                  | 用户配置的阿里云百炼          | 用户主动使用 AI 搜索时；检索索引保存在本机             |
+| 百炼 API Key                                 | 手机系统安全存储              | 不发送倾盖如故服务器，不进入日志或分析事件             |
+| 场次信息、参与者主动提交的资料               | 倾盖如故服务器                | 创建云端场次或参与者提交时                             |
+| 共享回顾                                     | 倾盖如故服务器                | 仅在组织者确认发布后                                   |
+
+请确保现场人员知道并同意录音。百炼临时处理遵循其自身服务规则；完整转写与私人录音不会随共享回顾自动发布。卸载 App、清除应用数据或设备故障可能导致本地内容丢失。
+
+实现可核查：[录音与本地存储](apps/mobile/src/storage) · [AI 处理](apps/mobile/src/ai-processing.ts) · [Key 安全存储](apps/mobile/src/ai-key.ts) · [云端共享接口](apps/api/src/cloud.ts) · [完整隐私说明](docs/PRIVACY_POLICY.md)。
+
+## 如何开始使用？
+
+### 我是活动组织者
+
+1. 从 [GitCode Release](https://gitcode.com/xixisys/qinggairugu-releases/releases) 下载 Android APK 并安装。
+2. 打开 App，点击「开始记录」；无需先注册或填写活动标题。
+3. 点击「让大家加入」，展示本场二维码。
+4. 如需 AI 整理，在「我的 → AI 服务」填写自己的阿里云百炼 API Key，再发起整理。
+5. 查看并编辑回顾，确认后点击「发布这场回顾」。
+
+### 我是活动参与者
+
+1. 用微信扫描组织者展示的活动码。
+2. 填写名字 / 昵称和一句话介绍，选择保存资料或仅本场使用。
+3. 按本场设置了解参与者；组织者发布后，查看本场回顾。
+
+小程序真实使用需要组织者部署并配置对应的微信小程序，扫码进入的开发版、体验版或正式版应与账号权限匹配。
+
+## 常见问答
+
+### 有什么可以本地保存录音的开源工具？
+
+倾盖如故面向 Android 本地录音和线下交流记录，录音原文件保存在手机，不上传倾盖如故服务器。它还提供可选的百炼 AI 整理、本地历史检索和微信活动参与者流程。只录音无需填写 AI Key；AI 整理会联网调用用户配置的服务。
+
+### 有没有既能录音整理，又能让活动参与者互相认识的工具？
+
+倾盖如故将组织者的录音记录与微信扫码加入关联到同一个场次。组织者记录对话、分享回顾；参与者填写「关于我」，在本场允许互相可见时了解其他人。适合 Coffee Chat、读书会、创业交流与小型沙龙。
+
+### 倾盖如故是会议纪要工具，还是活动报名平台？
+
+倾盖如故以线下交流记录为中心，兼顾「谁来了」和「聊了什么」。它可以整理会谈内容，但当前不提供线上会议、活动招募、票务或报名支付，也不提供陌生人社交、私聊与好友系统。
+
+### 参与者需要安装 App 或注册账号吗？
+
+参与者无需安装 Android App，用微信扫码进入小程序即可。小程序通过 `wx.login` 建立身份，不要求手机号、邮箱或密码。Android App 则面向组织者录音使用，开始本地录音无需注册。
+
+### 所有参加活动的人都能看到我的资料吗？
+
+不一定。倾盖如故支持「本场参与者互相可见」与「仅组织者可见」两种设置，参与者资料按本场配置展示。保存「关于我」只用于下次确认后快速复用，不代表加入公开社交网络。
+
+### 倾盖如故可以离线录音、完全离线使用 AI 吗？
+
+Android 本地录音与保存不依赖 AI 服务。当前 AI 转写、整理和 AI 搜索需要联网调用阿里云百炼，不提供完全离线的大模型推理。微信扫码加入和共享回顾也需要联网访问服务端。
+
+### 不填写 API Key，可以先录音吗？
+
+可以。倾盖如故可以先录音并保留文件，之后再配置 AI 服务进行整理。当前只支持阿里云百炼 BYOK，由用户自行提供 API Key，不支持其他 AI 厂商。
+
+### 倾盖如故免费吗？AI 调用费用由谁承担？
+
+当前 App 免费使用，不提供会员、订阅、充值或支付功能。AI 能力使用用户自己的阿里云百炼账户，调用费用和额度按该账户与服务规则计算，不等于无限免费 AI。
+
+### AI 会把完整录音或回顾自动公开吗？
+
+不会。私人录音、完整转写与私人摘要默认保存在手机。只有组织者确认发布的共享回顾进入云端并供本场参与者查看；主动进行 AI 整理时，录音会临时发送百炼处理。
+
+### 能搜索我以前在哪场聊过某个话题吗？
+
+可以。倾盖如故的「问倾盖如故」检索本设备保存的私人历史记录，并尽量附上场次、时间、发言人等来源。它不会搜索全平台用户或其他人的私人录音。生成回答时，问题和相关原文片段会发送用户配置的百炼服务。
+
+### Android 和 iOS 都能用吗？
+
+当前提供 Android APK，参与者使用微信小程序。iOS 版正在申请 App Store 上架中，尚无可用的 App Store 下载链接；当前不提供桌面客户端或 Web 用户后台。
+
+### GitHub 和 GitCode 两个仓库有什么区别？
+
+[GitHub 主仓库](https://github.com/congcong-ai/qinggairugu) 提供完整源码、开发文档和问题反馈入口。[GitCode 从属仓库](https://gitcode.com/xixisys/qinggairugu-releases) 只用于国内 APK 与 SHA256 校验文件下载，不同步产品源码。官网点击 Android 下载后会跳转 GitCode 或其公开 CDN，安装包流量不经过倾盖如故服务器。
+
+### 倾盖如故采用什么开源许可证？可以修改和自部署吗？
+
+倾盖如故采用 [MIT 许可证](LICENSE)，允许在保留版权与许可声明的条件下使用、修改和分发。完整源码在 GitHub 主仓库，可按开发文档自行部署。第三方依赖及资源遵循各自的许可证；自部署仍需配置自己的微信小程序、数据库等服务。
+
+## 开发、自部署与贡献
+
+倾盖如故使用 TypeScript Monorepo：Android App 基于 Expo / React Native，微信小程序基于 Taro，后端使用 Hono、PostgreSQL 和 Drizzle；本地存储使用 expo-sqlite，API Key 使用 expo-secure-store。
 
 ```bash
 pnpm install
-pnpm dev
-pnpm dev:mobile
-pnpm dev:miniapp
-pnpm dev:api
-pnpm build
-pnpm lint
-pnpm typecheck
-pnpm test
-```
-
-`dev` 脚本会先终止对应端口的监听进程，再启动服务：Mobile 8082、API 9001；小程序 watch 不启动 HTTP 服务，预留 10086。请勿在这些端口运行无关服务。
-
-```bash
-export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
-export PATH="$ANDROID_HOME/platform-tools:$PATH"
-pnpm --filter @pengtou/mobile android:prebuild
-pnpm android
-```
-
-开发构建使用 Custom Dev Client，不依赖 Expo Go。`pnpm build` 中 Mobile 的产物为 Android JS bundle，不能等同于 APK 或真机验收。
-
-微信开发者工具导入 `apps/miniapp`；当前游客 AppID 已被本机工具拒绝，需要在 `apps/miniapp/project.config.json` 填写自己的 AppID。AppSecret 只填后端 `.env`。真机请求 API 时使用开发电脑的局域网 IP，不使用 localhost。
-
-## 数据库与服务配置
-
-```bash
 cp .env.example .env
-createdb pengtou
-pnpm --filter @pengtou/database migrate
-pnpm dev:api
+pnpm dev:web
 ```
 
-如果数据库已存在，不重复执行 `createdb`。配置 `DATABASE_URL` 后执行增量 migration；不修改已执行的历史 SQL。服务端只持久化共享内容。
+上述命令启动品牌官网预览，不会自动创建数据库、配置微信服务或启动完整业务链路。完整配置与开发步骤见 [本地开发与部署](docs/LOCAL_DEVELOPMENT.md)。
 
-Mobile 的 `EXPO_PUBLIC_API_URL` 放在 `apps/mobile/.env`（已忽略）；正式版必须 HTTPS。小程序构建前设置 `TARO_APP_API_URL`。后端根 `.env` 不会自动成为 Mobile 的环境文件。
+| 目录           | 内容                                                          |
+| -------------- | ------------------------------------------------------------- |
+| `apps/mobile`  | Android 本地录音、AI 整理、搜索与私有数据                     |
+| `apps/miniapp` | 微信扫码加入、参与者资料与共享回顾                            |
+| `apps/api`     | 场次、微信身份、参与者和共享回顾接口，官网与 GitCode 下载入口 |
+| `apps/web`     | 品牌官网，使用 WebP Logo                                      |
+| `packages`     | 类型契约、AI Provider、数据库、共享规则与设计 tokens          |
 
-只在本地调试时，同时设置后端 `ALLOW_DEV_AUTH=true` 和小程序 `TARO_APP_DEV_AUTH=true` 后运行开发命令，可使用明确的开发身份；生产环境禁用。真实用户路径使用 `wx.login`。
+开发前阅读 [AGENTS.md](AGENTS.md) 和 [TASK.md](TASK.md)。提交问题请附上设备与系统版本、复现步骤和经过脱敏的日志，不要提交录音、完整转写、API Key 或个人资料。
 
-手机使用时，百炼 Key 在「我的 → AI 服务」输入。若要先从本机验证，在根 `.env` 填写 `DASHSCOPE_API_KEY` 后运行 `pnpm ai:test`，仅请求百炼的连接、短文本向量和短文本摘要，会产生少量账户调用用量；不会测试音频 ASR，也不会把 Key 发送到倾盖如故后端或打进 App。当前采用北京地域，模型配置集中在 `packages/ai/src/config.ts`。不把 Key 放到后端环境变量。
+[GitHub 问题反馈](https://github.com/congcong-ai/qinggairugu/issues) · [开发验证记录](docs/DEVELOPMENT.md) · [Android 真机验证](docs/ANDROID_DEVICE_TESTING.md) · [部署说明](docs/PRODUCTION_DEPLOYMENT.md) · [GitCode 安装包说明](docs/GITCODE_RELEASES.md)
 
-## 构建安装包
-
-```bash
-pnpm --filter @pengtou/mobile android:prebuild
-cd apps/mobile/android
-./gradlew :app:assembleDebug :app:assembleRelease :app:bundleRelease -PreactNativeArchitectures=arm64-v8a
-```
-
-先配置 `ANDROID_HOME`、Java 21；如需代理，为 Gradle 命令添加本机代理参数。debug APK 使用开发签名并连接 Metro；release APK/AAB 缺少私有签名时保持未签名，签名说明见 [Android 上架清单](docs/APP_RELEASE_CHECKLIST.md)。发布前配置 HTTPS 地址并重新构建，未签名包不能直接安装。
-
-## 验证
-
-```bash
-pnpm lint
-pnpm typecheck
-pnpm build
-TEST_DATABASE_URL=postgres://localhost:5432/postgres pnpm test
-```
-
-集成测试会创建和删除独立随机测试数据库，需要该实例的建库权限；不操作业务数据库。真机验收顺序见 TASK.md 和 [验证记录](docs/DEVELOPMENT.md)。
-
-## 目录
-
-`apps/mobile`、`apps/miniapp`、`apps/api` 是三个应用；`packages` 提供 contracts、database、ai、shared、design-tokens、config。
-
-## 验收进度
-
-实际命令与结果持续记录在 [开发验证记录](docs/DEVELOPMENT.md)。缺少的配置见 [需要补齐的配置与设备](docs/NEED_FROM_OWNER.md)。未完成真机、微信和百炼真实链路前，不视为 MVP 完成。
-
-## 依赖依据
-
-- [Expo SDK](https://docs.expo.dev/versions/latest/)
-- [Expo Audio 后台录音](https://docs.expo.dev/versions/latest/sdk/audio/)
-- [Expo SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/)
-- [Taro 安装及使用](https://docs.taro.zone/docs/GETTING-STARTED)
-- [Hono Node.js](https://hono.dev/docs/getting-started/nodejs)
-- [Drizzle PostgreSQL](https://orm.drizzle.team/docs/get-started/postgresql-new)
-- [Turborepo 仓库结构](https://turborepo.dev/docs/crafting-your-repository/structuring-a-repository)
-
-引入版本通过 npm registry 验证，最终版本记录在 `pnpm-lock.yaml`。界面采用 React Native 原生组件和共享语义 tokens，当前不引入额外 UI 框架以减少新 SDK 原生兼容面。
-
-## 临时网络代理
-
-本机 ClashX HTTP 代理为 `http://127.0.0.1:7890`。需要时仅为命令设置：
-
-```bash
-HTTP_PROXY=http://127.0.0.1:7890 HTTPS_PROXY=http://127.0.0.1:7890 NO_PROXY=localhost,127.0.0.1 pnpm install
-```
-
-不修改系统或 Git 全局代理。其他开发者需按自己的本地代理端口配置。
-
-华为鸿蒙 4.2 和 Android 真机的连接、独立安装与测试流程见 [真机测试指南](docs/ANDROID_DEVICE_TESTING.md)。微信配置申请中仍可测试录音和 BYOK。
-
-## China 服务器部署
-
-仅部署 Hono API 到 `qgrg.bebackpacker.com`，使用原生 Node.js、PM2、Nginx 与 PostgreSQL。China API 已于 2026-10-19 完成首次部署，公网 API/数据库健康检查及 TLS 验证通过；本地构建、审计、授权边界与安装发布步骤见 [生产部署说明](docs/PRODUCTION_DEPLOYMENT.md)。可运行 `pnpm server:ports` 核查，或 `pnpm server:build /tmp/qinggai-release.tar.gz` 生成本地发布包。
-
-### 品牌官网
-
-`pnpm dev:web` 构建并在 <http://localhost:3000> 预览官网，启动前自动释放 3000 端口。源码在 `apps/web`，无需新增前端依赖。修改页面后运行 `pnpm build:web` 并刷新浏览器。
-
-官网构建不依赖 APK，不将安装包打入网站或服务器发布包。Logo 源于 `assets/logo/logo.png`，网页使用 `apps/web/assets/logo.webp`。
-
-生产 API 同时提供首页、`/download/android` 直达下载、`/privacy` 和 `/terms`；现有 `server:build` 包含官网，沿用同一域名和部署流程。iOS 按钮提示「正在申请 App Store 上架中」，参与者仍可通过主办方活动码加入小程序。
-
-### GitCode Android 下载与发布
-
-下载沿用 CreatorLens 的 GitCode Release 方案：官网 `/download/android` 查询最新含 Android 附件的正式 Release，再以 302 跳转公开附件/CDN，安装包流量不经过网站服务器。API 或附件检查失败时回退到 GitCode 发布页；仓库未配置时返回 503。官网版本信息动态读取 `/downloads/release.json`，不写死旧版本。
-
-在根目录 `.env` 和生产服务器 `/var/www/qinggai/shared/.env` 填写 `GITCODE_OWNER`、`GITCODE_REPO`。公开仓库一般可以匿名查询；需要鉴权时仅在服务端配置 `GITCODE_TOKEN`，该 Token 不进入页面、App、下载跳转或附件请求。请使用独立的公开安装包仓库，无需公开产品源代码。
-
-本机发布流程：先运行现有 Android 构建命令生成 `artifacts/android/release.json` 和正式 APK，再运行 `pnpm android:publish`。发布需要本机根目录 `.env` 中的 GitCode Token；脚本创建或复用 `v版本号` Release，上传 `qinggai-版本号-release.apk` 与 `.sha256`，下载远端附件核验 SHA256。本地文件始终保留；已存在但内容不同的同名附件不会覆盖，应提高版本号。发布新 APK 后官网自动选择新版本，无需重新部署官网。
+产品信息核对日期：2026 年 10 月 19 日。当前功能与边界以上述说明和仓库实现为准。

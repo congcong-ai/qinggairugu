@@ -25,10 +25,8 @@
 
 产品更名为「倾盖如故」，正式小程序 AppID 为 `wx066bf055f6b9d415`，已写入小程序项目配置及根目录 `.env`。原测试号 Secret 已从当前配置中清空，需在 `WECHAT_APP_SECRET` 填写此正式 AppID 对应的 Secret。不得复用测试号 Secret。域名规划为 `qgrg.bebackpacker.com`，尚未部署；服务器当前仅获只读授权。
 
-## GitCode 安装包发布仓库
+## 2026-10-19 GitCode 安装包仓库已就绪
 
-- 需要：倾盖如故的 GitCode 公开安装包仓库地址，以及可发布该仓库 Release 的 Token。
-- 用途：官网直达下载 Android APK，沿用 CreatorLens 的国内仓库下载方式，不公开项目源代码。
-- 获取：在 GitCode 创建或选择独立公开仓库，在账号设置创建适用的访问令牌。
-- 填写：本机根目录 `.env` 的 `GITCODE_OWNER`、`GITCODE_REPO`、`GITCODE_TOKEN`；服务器仅填写仓库信息及必要的查询凭据。
-- 当前可继续：官网、跳转服务、版本查询、发布脚本和自动化测试；仓库未配置时下载入口返回「安装包正在准备」。
+已创建公开从属仓库 [xixisys/qinggairugu-releases](https://gitcode.com/xixisys/qinggairugu-releases)，只保存下载说明、Android APK 与 SHA256 校验文件，不同步产品源码。GitHub 源码主仓库是 [congcong-ai/qinggairugu](https://github.com/congcong-ai/qinggairugu)。
+
+本机 `.env` 已配置 GitCode 仓库和发布凭据，v0.1.1 已完成上传与远端 SHA256 校验。凭据不提交到源码仓库。网站上线时仍需在服务器配置相同的下载仓库信息；尚未将本次官网改动部署到生产。
