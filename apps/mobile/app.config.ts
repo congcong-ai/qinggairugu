@@ -2,14 +2,18 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: '倾盖如故',
   slug: 'qinggai',
-  version: '0.1.1',
+  version: '0.1.2',
   icon: './assets/icon.png',
   scheme: 'pengtou',
   orientation: 'portrait',
   userInterfaceStyle: 'light',
   android: {
     package: process.env.ANDROID_PACKAGE || 'com.xixisys.pengtou',
-    versionCode: 2,
+    versionCode: 3,
+    adaptiveIcon: {
+      foregroundImage: './assets/icon-foreground.png',
+      backgroundColor: '#F7F4EE',
+    },
     allowBackup: false,
     blockedPermissions: [
       'android.permission.READ_EXTERNAL_STORAGE',

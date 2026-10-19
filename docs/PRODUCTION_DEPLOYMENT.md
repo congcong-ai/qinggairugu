@@ -36,11 +36,11 @@ tar -tzf /tmp/qinggai-release.tar.gz
 
 显式打包 API 与 migration 的 JS、历史 SQL、API 依赖的 workspace manifests、裁剪非服务端 importers 后的锁文件（保留原版本与 integrity）、锁文件需要的补丁、服务器脚本及配置模板；不含应用 `.env`、Git、本机 node_modules、移动端/小程序源码或用户 assets。没有新增依赖，没有修改历史 migration。服务器只安装 Linux production dependencies，不构建源码。
 
-## 首次安装（须另获远端写入授权）
+## 首次安装
 
 ```bash
 cp .deploy.env.example .deploy.env
-QINGGAI_REMOTE_WRITE_APPROVED=yes LETSENCRYPT_EMAIL=实际证书通知邮箱 pnpm server:install china
+LETSENCRYPT_EMAIL=实际证书通知邮箱 pnpm server:install china
 ```
 
 脚本先只读判断安装标记，已安装立即退出。首次创建独立 `qinggai` 系统用户、数据库及角色；已存在同名资源时停止检查，避免覆盖密码。依赖缺失或 pnpm 版本不匹配时停止，不自动升级共享服务器组件。若确实缺依赖，应先 `apt-get check` 与 APT 模拟，审阅有无升级或删除，再按新授权安装所缺组件；当前服务器无需此步骤。
@@ -64,13 +64,26 @@ QINGGAI_REMOTE_WRITE_APPROVED=yes LETSENCRYPT_EMAIL=实际证书通知邮箱 pnp
     └── logs/
 ```
 
-## 日常发布（须另获远端写入授权）
+## 日常发布
 
 ```bash
-QINGGAI_REMOTE_WRITE_APPROVED=yes pnpm server:deploy china
+pnpm server:deploy china
 ```
 
-仅允许 China；其他目标立即拒绝。先构建并校验 SHA256，再唯一目录解包，使用 flock 避免并发。锁文件与 Node ABI 未变且上版依赖完整时复制上版 Linux dependencies，否则安装 frozen production dependencies，并使用 `--no-optional` 排除 Drizzle 在完整工作区锁文件中关联的可选 Expo SQLite 依赖。PostgreSQL 是直接依赖，仍正常安装。发布前校验正式微信配置、关闭开发身份和本机数据库地址；数据库密码不会传入命令行。
+入口在任何 SSH、构建发布包或上传之前检查 Android 下载包：当前 Mobile 源码、图标、共享代码、依赖与构建配置必须匹配 `apps/mobile/release-manifest.json`，官网 `/downloads/release.json` 的版本必须一致，且实际从 `/download/android` 下载到的 APK 大小与 SHA256 必须匹配清单。线上旧包、同版本不同文件、无法下载或无法确认版本时，打印原因并以非零状态终止部署，不继续操作服务器。
+
+App 更新时先提升 `apps/mobile/app.config.ts` 的 version 与 versionCode，再执行：
+
+```bash
+pnpm android:build
+pnpm android:publish
+pnpm android:check-release
+pnpm server:deploy china
+```
+
+`android:build` 沿用仓库外的正式签名配置，输出 APK、SHA256 和 `artifacts/android/release.json`，并生成需要随源码提交的 `apps/mobile/release-manifest.json`。仅后端、官网或部署文档变化无需重打 APK；Mobile 或共享代码变化后清单会失效，需要重新构建并发布。检查只读取官网和公开附件，不需要将 GitCode Token 传给官网或下载 CDN。网络失败时同样终止，可修复后重试；没有跳过检查的部署开关。
+
+用户已授权本项目的常规安装与发布，显式执行入口即可，无需再设置 `QINGGAI_REMOTE_WRITE_APPROVED`。服务器内部脚本仍由入口传递调用标识并要求 root 权限。仅允许 China；其他目标立即拒绝。先构建并校验 SHA256，再唯一目录解包，使用 flock 避免并发。锁文件与 Node ABI 未变且上版依赖完整时复制上版 Linux dependencies，否则安装 frozen production dependencies，并使用 `--no-optional` 排除 Drizzle 在完整工作区锁文件中关联的可选 Expo SQLite 依赖。PostgreSQL 是直接依赖，仍正常安装。发布前校验正式微信配置、关闭开发身份和本机数据库地址；数据库密码不会传入命令行。
 
 先创建并检验 pg_dump 备份，再执行现有增量 migration。原子切换 `current`，启动专用用户的 `qinggai-api`。首次健康通过后保存 PM2 状态并交给 `pm2-qinggai` systemd，验证 active/enabled 及再次健康检查。密钥由 Node 启动时读取，不注入 PM2 dump。成功后仅保留当前与切换前的健康版本；备份不自动删除，需按磁盘容量安排保留策略。
 
@@ -131,3 +144,9 @@ HTTPS 上线后，在真实手机验证：App 创建场次 → 官方码 → 微
 - 本次构建中的格式检查、三项 workspace 类型检查、四项基础 API/二维码测试通过；没有修改历史 migration 或输出真实 Secret。
 
 这里只确认 API 部署及运行检查完成。正式域名下微信登录、官方小程序码与 App/微信双端业务链路仍需真机验收；正式小程序的合法 request 域名与页面发布状态尚未通过本次部署核实。
+
+## 2026-10-19 日常部署入口与官网更新
+
+已移除本地入口沿用的只读阶段临时拦截。在未设置 `QINGGAI_REMOTE_WRITE_APPROVED` 的环境下，实际执行 `pnpm server:deploy china` 成功，服务器内部调用校验保留。
+
+此次发布已包含当前官网构建产物及其公开路由。公网根地址 `https://qgrg.bebackpacker.com/` 实测返回 HTTP 200、`text/html`，标题为「倾盖如故 · 把每一次见面留下来」；`/style.css`、`/main.js` 与数据库健康检查均通过。此前线上仅有 API 版本时，根地址返回「资源不存在」，现已随完整发布恢复。

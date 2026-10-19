@@ -24,7 +24,9 @@
     "server:ports": "bash scripts/audit-remote.sh china",
     "build:web": "node scripts/build-web.mjs",
     "dev:web": "pnpm build:web && node scripts/dev.mjs 3000 pnpm --filter @pengtou/api exec tsx src/website-preview.ts",
-    "android:publish": "tsx scripts/publish-android.mts"
+    "android:build": "node scripts/build-android-release.mjs",
+    "android:publish": "tsx scripts/publish-android.mts",
+    "android:check-release": "node scripts/check-android-release.mjs"
   },
   "devDependencies": {
     "turbo": "^2.11.9",

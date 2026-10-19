@@ -184,6 +184,8 @@ pnpm dev:web
 
 上述命令启动品牌官网预览，不会自动创建数据库、配置微信服务或启动完整业务链路。完整配置与开发步骤见 [本地开发与部署](docs/LOCAL_DEVELOPMENT.md)。
 
+正式 Android 包使用 `pnpm android:build` 构建、`pnpm android:publish` 发布到 GitCode。App 更新时先递增 version / versionCode，并随源码提交生成的 `apps/mobile/release-manifest.json`。`pnpm server:deploy` 在连接服务器前自动校验当前源码、官网 APK 版本与实际下载文件 SHA256；旧包或检查失败会提示并终止。可用 `pnpm android:check-release` 单独检查，详见 [Android 发布清单](docs/APP_RELEASE_CHECKLIST.md)。
+
 | 目录           | 内容                                                          |
 | -------------- | ------------------------------------------------------------- |
 | `apps/mobile`  | Android 本地录音、AI 整理、搜索与私有数据                     |

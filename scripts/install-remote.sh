@@ -2,7 +2,6 @@
 set -Eeuo pipefail
 project_root=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source "$project_root/scripts/lib/deploy-target.sh"
-require_remote_write
 select_deploy_target "$@"
 if ssh "${ssh_options[@]}" "$ssh_target" 'sudo -n test -f /var/www/qinggai/shared/.install-complete'; then echo '已完成首次安装。'; exit 0; fi
 : "${LETSENCRYPT_EMAIL:?请在当前命令环境提供 TLS 通知邮箱}"
@@ -11,7 +10,7 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/qinggai-install.XXXXXX"); trap 'rm -rf "$work"
 bundle="$work/bootstrap.tar.gz"
 tar -czf "$bundle" -C "$project_root" scripts/server-install.sh scripts/server-port-audit.py scripts/lib/deploy-proxy.sh deploy/nginx.conf.template
 checksum=$(shasum -a 256 "$bundle" | awk '{print $1}')
-# 唯一远端临时文件由远端 mktemp 创建，只有通过授权守卫后才会执行。
+# 显式执行安装入口后，由远端 mktemp 创建唯一临时文件。
 remote=$(ssh "${ssh_options[@]}" "$ssh_target" 'mktemp /tmp/qinggai-bootstrap.XXXXXX')
 scp -P "$DEPLOY_CHINA_SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes "$bundle" "$ssh_target:$remote"
 proxy_args=$(printf 'DEPLOY_USE_PROXY=%q DEPLOY_PROXY_HOST=%q DEPLOY_PROXY_PORT=%q DEPLOY_HTTP_PROXY_PORT=%q' "${DEPLOY_USE_PROXY:-false}" "${DEPLOY_PROXY_HOST:-127.0.0.1}" "${DEPLOY_PROXY_PORT:-1080}" "${DEPLOY_HTTP_PROXY_PORT:-1087}")

@@ -6,13 +6,16 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
 import { createHash } from 'node:crypto';
-import { createRequire } from 'node:module';
+import { format } from 'prettier';
+import {
+  resolveAndroidBuild,
+  androidSourceHash,
+  androidArchitectures,
+  releaseManifestPath,
+} from './lib/android-release.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const mobile = resolve(root, 'apps/mobile');
-const expoCli = createRequire(resolve(mobile, 'package.json')).resolve(
-  'expo/bin/cli',
-);
 const signingFile =
   process.env.ANDROID_SIGNING_ENV ||
   resolve(homedir(), '.config/qinggai/signing/release.env');
@@ -25,17 +28,6 @@ for (const key of [
 ]) {
   if (!signing[key]) throw new Error(`签名配置缺少 ${key}`);
 }
-const api = new URL(
-  process.env.EXPO_PUBLIC_API_URL || 'https://qgrg.bebackpacker.com',
-);
-if (
-  api.protocol !== 'https:' ||
-  api.username ||
-  api.password ||
-  api.search ||
-  api.hash
-)
-  throw new Error('Release API 必须使用不含凭据的 HTTPS 地址');
 const sdk =
   process.env.ANDROID_HOME || '/opt/homebrew/share/android-commandlinetools';
 const java =
@@ -43,31 +35,18 @@ const java =
   execFileSync('/usr/libexec/java_home', ['-v', '21'], {
     encoding: 'utf8',
   }).trim();
-const env = {
+const { config, env, expoCli, api } = resolveAndroidBuild(root, {
   ...process.env,
   ...signing,
   ANDROID_HOME: sdk,
   JAVA_HOME: java,
-  NODE_ENV: 'production',
-  EXPO_PUBLIC_API_URL: api.href.replace(/\/$/, ''),
-  CI: '1',
-};
+});
+const sourceHash = androidSourceHash(root, config, api);
 function run(command, args, cwd = mobile) {
   const result = spawnSync(command, args, { cwd, env, stdio: 'inherit' });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`${command} 执行失败`);
 }
-const config = JSON.parse(
-  execFileSync(
-    process.execPath,
-    [expoCli, 'config', '--type', 'public', '--json'],
-    {
-      cwd: mobile,
-      env,
-      encoding: 'utf8',
-    },
-  ),
-);
 // android/ 是被忽略的 Expo 生成目录；重建以移除仓库改名后的绝对路径缓存。
 run(process.execPath, [
   expoCli,
@@ -79,7 +58,7 @@ run(process.execPath, [
 ]);
 const gradleArgs = [
   ':app:assembleRelease',
-  '-PreactNativeArchitectures=arm64-v8a,armeabi-v7a',
+  `-PreactNativeArchitectures=${androidArchitectures.join(',')}`,
   '--console',
   'plain',
 ];
@@ -107,7 +86,7 @@ run(resolve(buildTools, 'apksigner'), [
   '--print-certs',
   apk,
 ]);
-run(resolve(buildTools, 'zipalign'), ['-c', '-P', '16', '-v', '4', apk]);
+run(resolve(buildTools, 'zipalign'), ['-c', '-P', '16', '4', apk]);
 const badging = execFileSync(
   resolve(buildTools, 'aapt'),
   ['dump', 'badging', apk],
@@ -118,9 +97,14 @@ const badging = execFileSync(
 );
 if (
   !badging.includes("application-label:'倾盖如故'") ||
-  badging.includes('application-debuggable')
+  badging.includes('application-debuggable') ||
+  !badging.includes(`name='${config.android.package}'`) ||
+  !badging.includes(`versionName='${config.version}'`) ||
+  !badging.includes(`versionCode='${config.android.versionCode}'`)
 )
-  throw new Error('APK 展示名称或 Release 配置不正确');
+  throw new Error('APK 展示名称、版本、包名或 Release 配置不正确');
+if (androidSourceHash(root, config, api) !== sourceHash)
+  throw new Error('构建过程中 App 源码发生变化，请重新执行 pnpm android:build');
 const output = resolve(root, 'artifacts/android');
 mkdirSync(output, { recursive: true });
 const filename = `qinggai-${config.version}-release.apk`;
@@ -131,25 +115,24 @@ writeFileSync(
   resolve(output, `${filename}.sha256`),
   `${sha256}  ${filename}\n`,
 );
-writeFileSync(
-  resolve(output, 'release.json'),
-  JSON.stringify(
-    {
-      name: config.name,
-      version: config.version,
-      versionCode: config.android.versionCode,
-      package: config.android.package,
-      api: env.EXPO_PUBLIC_API_URL,
-      architectures: ['arm64-v8a', 'armeabi-v7a'],
-      filename,
-      bytes: bytes.length,
-      sha256,
-      builtAt: new Date().toISOString(),
-      networkVerified: false,
-    },
-    null,
-    2,
-  ) + '\n',
+const manifest = await format(
+  JSON.stringify({
+    schemaVersion: 1,
+    name: config.name,
+    version: config.version,
+    versionCode: config.android.versionCode,
+    package: config.android.package,
+    api,
+    architectures: androidArchitectures,
+    filename,
+    bytes: bytes.length,
+    sha256,
+    sourceHash,
+    builtAt: new Date().toISOString(),
+  }),
+  { parser: 'json' },
 );
+writeFileSync(resolve(output, 'release.json'), manifest);
+writeFileSync(resolve(root, releaseManifestPath), manifest);
 console.log(`独立 Release APK 已生成：${resolve(output, filename)}`);
 console.log('构建与签名校验不代表线上 API 和小程序体验版已经就绪。');

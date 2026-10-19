@@ -4,7 +4,7 @@
 
 - [ ] 确认正式包名；默认 `com.xixisys.pengtou`，通过 `ANDROID_PACKAGE` 配置。
 - [ ] 确认应用名「倾盖如故」、version / versionCode；更新 `apps/mobile/app.config.ts`。
-- [ ] 替换或确认当前几何占位图标与 splash。
+- [ ] 确认正式 Logo 图标与 splash；主图标为 1024×1024 PNG，Android 自适应前景为带透明底与安全边距的 1024×1024 PNG。
 - [ ] 准备正式 keystore，备份到安全位置，不提交仓库。
 - [ ] 在构建进程中设置 `PENGTOU_KEYSTORE_FILE`、`PENGTOU_KEYSTORE_PASSWORD`、`PENGTOU_KEY_ALIAS`、`PENGTOU_KEY_PASSWORD`。
 - [ ] 未配置正式签名时 release 产物必须保持未签名，禁止把 debug 签名当正式签名。
@@ -19,6 +19,10 @@ cd apps/mobile/android
 ```
 
 可按当前网络临时增加 Gradle HTTP / HTTPS 代理参数，不将密码或代理写入仓库。debug APK 位于 `apps/mobile/android/app/build/outputs/apk/debug/`；release APK 位于 `apk/release/`，AAB 位于 `bundle/release/`。
+
+日常正式 APK 使用 `pnpm android:build`：从 `~/.config/qinggai/signing/release.env` 读取签名（可通过 `ANDROID_SIGNING_ENV` 指定），自动 prebuild、构建 ARM64 / ARMv7 APK、验证签名与对齐，以及核对实际包名、versionName / versionCode。产物留在 `artifacts/android/`；构建前后比较源码指纹，源码中途变化时不生成有效清单。构建成功会更新 `apps/mobile/release-manifest.json`，该清单需要随代码提交，不包含签名私钥或口令。
+
+更新 App 时必须递增 version 和 versionCode，随后执行 `pnpm android:build`、`pnpm android:publish`、`pnpm android:check-release`。发布前也会检查清单是否对应当前源码；禁止把过时本地 APK 上传。`pnpm server:deploy` 会自动运行同样的官网版本与实际下载文件 SHA256 检查，旧版本或检查失败立即中止。
 
 使用 SDK 的 `apksigner verify --print-certs` 检查签名，记录证书 SHA256；使用 `shasum -a 256` 记录产物校验值。debug 签名仅供开发，不能用于应用宝正式上架。
 
@@ -83,3 +87,13 @@ release APK 和 AAB 已内置 JS bundle 与 `vec.so`。release APK 的 apksigner
 测试 APK 使用开发证书，已通过 apksigner 校验；正式 release APK/AAB 保持未签名。中文通知通过 expo-audio 的 pnpm 补丁维护，并在 Mobile package.json 指定该模块从源码构建。升级依赖后必须重新核对补丁与 APK 中的字符串资源，不能只以编译成功认定补丁生效。
 
 独立包已在华为 OCE-AN10 覆盖安装并冷启动，确认默认中文首页、原有 Key 和 AI 结果保留、中文录音通知运行及停止后消失。应用宝生产签名和长时间真机验收仍未完成。
+
+## 2026-10-19 · 正式 Logo 与部署前 APK 检查
+
+已生成正式签名的 `artifacts/android/qinggai-0.1.2-release.apk`：versionName `0.1.2`，versionCode `3`，包名 `com.xixisys.pengtou`，包含 ARM64 / ARMv7，正式 API 为 `https://qgrg.bebackpacker.com`。签名证书与 0.1.1 保持一致，apksigner 与 16KB zipalign 检查均通过。
+
+文件大小为 50,553,398 字节，SHA256 为 `e14c4f280aa82ac38c82bf7e27ccc20a6d5b2e2aa844e33e6fc8904865f4872b`。已从最终 APK 提取自适应前景图，确认与正式 Logo 原生资源逐像素一致；主图标与自适应前景输入均为 1024×1024 PNG。
+
+已验证官网实际下载 / 重定向 / SHA256 校验成功；验证时线上仍为 0.1.1，执行 `pnpm server:deploy` 按预期以状态码 1 终止，未执行 SSH 或 SCP。新版 APK 需要通过 `pnpm android:publish` 发布后，部署前检查才会放行。
+
+本轮完整 lint、9 个工作区 typecheck、隔离服务端构建及其 32 项测试通过；其中 9 项测试覆盖源码与图标变更、旧版本、同版本不同文件、网络失败、错误下载页及检查失败后禁止远端操作。

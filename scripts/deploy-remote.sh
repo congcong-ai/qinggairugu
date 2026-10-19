@@ -2,8 +2,8 @@
 set -Eeuo pipefail
 project_root=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source "$project_root/scripts/lib/deploy-target.sh"
-require_remote_write
 select_deploy_target "$@"
+node "$project_root/scripts/check-android-release.mjs"
 ssh "${ssh_options[@]}" "$ssh_target" 'sudo -n test -f /var/www/qinggai/shared/.install-complete' || { echo '请先完成首次安装。' >&2; exit 1; }
 work=$(mktemp -d "${TMPDIR:-/tmp}/qinggai-deploy.XXXXXX"); trap 'rm -rf "$work"' EXIT
 release_id="$(date -u +%Y%m%dT%H%M%SZ)-$(openssl rand -hex 4)"

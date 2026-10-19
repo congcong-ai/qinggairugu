@@ -5,6 +5,10 @@ import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gitCodeFromEnv } from '../apps/api/src/releases/gitcode';
+import {
+  resolveAndroidBuild,
+  readCurrentAndroidRelease,
+} from './lib/android-release.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 if (existsSync(resolve(root, '.env')))
@@ -31,7 +35,7 @@ async function digestRemote(url: string) {
 async function main() {
   if (process.argv.includes('--help')) {
     console.log(
-      '用法：pnpm android:publish\n将 artifacts/android/release.json 对应的 APK 和 SHA256 上传 GitCode Release，并下载核验。需要根目录 .env 中的 GITCODE_OWNER、GITCODE_REPO、GITCODE_TOKEN。',
+      '用法：pnpm android:publish\n检查 apps/mobile/release-manifest.json 与当前源码，将 artifacts/android 中对应的 APK 和 SHA256 上传 GitCode Release，并下载核验。需要根目录 .env 中的 GITCODE_OWNER、GITCODE_REPO、GITCODE_TOKEN。',
     );
     return;
   }
@@ -40,14 +44,8 @@ async function main() {
     throw new Error('请在根目录 .env 配置 GITCODE_TOKEN');
   const provider = gitCodeFromEnv();
   const directory = resolve(root, 'artifacts/android');
-  const release = JSON.parse(
-    readFileSync(resolve(directory, 'release.json'), 'utf8'),
-  );
-  if (
-    !/^\d+\.\d+\.\d+$/.test(release.version) ||
-    release.filename !== `qinggai-${release.version}-release.apk`
-  )
-    throw new Error('APK 发布清单无效');
+  const { config, api } = resolveAndroidBuild(root);
+  const release = readCurrentAndroidRelease(root, config, api);
   const apkPath = resolve(directory, release.filename);
   const bytes = readFileSync(apkPath);
   const sha256 = createHash('sha256').update(bytes).digest('hex');

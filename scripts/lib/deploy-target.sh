@@ -19,9 +19,3 @@ JS
   ssh_target="$DEPLOY_CHINA_SSH_USER@$DEPLOY_CHINA_SSH_HOST"
   ssh_options=(-o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -p "$DEPLOY_CHINA_SSH_PORT")
 }
-require_remote_write() {
-  [[ ${QINGGAI_REMOTE_WRITE_APPROVED:-} == yes ]] || {
-    echo '当前仅获服务器只读授权。上传、安装、迁移与发布均已阻止；须取得用户明确写入授权后再设置 QINGGAI_REMOTE_WRITE_APPROVED=yes。' >&2
-    exit 2
-  }
-}

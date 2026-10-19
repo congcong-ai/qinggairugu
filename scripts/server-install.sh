@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 只有取得远端写入授权后才可运行。当前阶段仅交付并本地检查。
+# 由本地安装入口调用，校验内部调用标识与 root 权限。
 set -Eeuo pipefail
 [[ ${QINGGAI_REMOTE_WRITE_APPROVED:-} == yes && $(id -u) -eq 0 ]] || { echo '需要明确远端写入授权与 root。' >&2; exit 2; }
 base=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
