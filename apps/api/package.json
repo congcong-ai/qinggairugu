@@ -1,0 +1,25 @@
+{
+  "name": "@pengtou/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node ../../scripts/dev.mjs 9001 tsx watch src/server.ts",
+    "build": "tsup src/server.ts --format esm --out-dir dist",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "hono": "^4.13.13",
+    "@hono/node-server": "^1.19.5",
+    "pino": "^10.0.0",
+    "@pengtou/contracts": "workspace:*",
+    "@pengtou/database": "workspace:*",
+    "zod": "^4.6.7",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "@types/qrcode": "^1.5.6"
+  }
+}

@@ -1,0 +1,10 @@
+node_modules
+**/dist
+**/.expo
+**/android
+**/ios
+pnpm-lock.yaml
+AGENTS.md
+TASK.md
+
+**/expo-env.d.ts

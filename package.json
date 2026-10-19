@@ -1,0 +1,39 @@
+{
+  "name": "qinggai",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:mobile": "pnpm --filter @pengtou/mobile dev",
+    "dev:miniapp": "pnpm --filter @pengtou/miniapp dev",
+    "dev:api": "pnpm --filter @pengtou/api dev",
+    "build": "pnpm build:web && turbo build",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "turbo typecheck",
+    "test": "vitest run",
+    "android": "pnpm --filter @pengtou/mobile android",
+    "ai:test": "tsx scripts/test-bailian.mts",
+    "server:build": "bash scripts/build-release.sh",
+    "server:install": "bash scripts/install-remote.sh",
+    "server:deploy": "bash scripts/deploy-remote.sh",
+    "server:ports": "bash scripts/audit-remote.sh china",
+    "build:web": "node scripts/build-web.mjs",
+    "dev:web": "pnpm build:web && node scripts/dev.mjs 3000 pnpm --filter @pengtou/api exec tsx src/website-preview.ts",
+    "android:publish": "tsx scripts/publish-android.mts"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.9",
+    "typescript": "~5.9.3",
+    "eslint": "^10.13.0",
+    "typescript-eslint": "^8.46.0",
+    "prettier": "^3.6.2",
+    "vitest": "^3.2.4",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.6"
+  }
+}

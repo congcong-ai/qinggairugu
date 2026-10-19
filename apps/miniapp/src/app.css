@@ -1,0 +1,65 @@
+page {
+  background: #f7f4ee;
+  color: #282f28;
+  font-family: system-ui, sans-serif;
+}
+.page {
+  padding: 48rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+.eyebrow {
+  color: #426b4e;
+  font-size: 24rpx;
+  letter-spacing: 6rpx;
+}
+.title {
+  font-size: 56rpx;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.subtitle {
+  font-size: 30rpx;
+  color: #72786c;
+  line-height: 1.9;
+}
+.card {
+  background: white;
+  border-radius: 40rpx;
+  padding: 40rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+.hero {
+  background: #e8ede1;
+  border-radius: 48rpx;
+  padding: 48rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+.button {
+  background: #426b4e;
+  color: white;
+  border: 0;
+  border-radius: 28rpx;
+  font-size: 32rpx;
+  width: 100%;
+  padding: 8rpx 0;
+}
+.button::after {
+  border: 0;
+}
+.hint {
+  font-size: 24rpx;
+  color: #72786c;
+  line-height: 1.8;
+}
+.field {
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #e2e5db;
+  font-size: 30rpx;
+  min-height: 60rpx;
+}

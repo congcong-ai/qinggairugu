@@ -1,0 +1,67 @@
+diff --git a/android/src/main/java/expo/modules/audio/service/AudioRecordingService.kt b/android/src/main/java/expo/modules/audio/service/AudioRecordingService.kt
+index 2c9230336efc5c2ba9d5c6e5d35bd84a02dfd369..40065d4dfddba25bd1ab1a0751a5908e7477aa18 100644
+--- a/android/src/main/java/expo/modules/audio/service/AudioRecordingService.kt
++++ b/android/src/main/java/expo/modules/audio/service/AudioRecordingService.kt
+@@ -12,6 +12,7 @@ import android.os.Build
+ import android.os.IBinder
+ import android.util.Log
+ import androidx.core.app.NotificationCompat
++import expo.modules.audio.R
+ import expo.modules.audio.AudioRecorder
+ import expo.modules.audio.getRecordingServiceErrorMessage
+ import expo.modules.kotlin.AppContext
+@@ -61,16 +62,21 @@ class AudioRecordingService : Service() {
+       if (notificationManager.getNotificationChannel(CHANNEL_ID) == null) {
+         val channel = NotificationChannel(
+           CHANNEL_ID,
+-          "Audio Recording",
++          getString(R.string.pengtou_recording_channel_name),
+           NotificationManager.IMPORTANCE_LOW
+         ).apply {
+-          description = "Shows when audio is being recorded in the background"
++          description = getString(R.string.pengtou_recording_channel_description)
+           setShowBadge(false)
+           enableVibration(false)
+           enableLights(false)
+           setSound(null, null)
+         }
+         notificationManager.createNotificationChannel(channel)
++      } else {
++        val channel = notificationManager.getNotificationChannel(CHANNEL_ID)
++        channel.name = getString(R.string.pengtou_recording_channel_name)
++        channel.description = getString(R.string.pengtou_recording_channel_description)
++        notificationManager.createNotificationChannel(channel)
+       }
+     }
+   }
+@@ -96,14 +102,14 @@ class AudioRecordingService : Service() {
+     }
+ 
+     return NotificationCompat.Builder(this, CHANNEL_ID)
+-      .setContentTitle("Recording audio")
+-      .setContentText("Tap to return to app")
++      .setContentTitle(getString(R.string.pengtou_recording_title))
++      .setContentText(getString(R.string.pengtou_recording_return))
+       .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+       .setOngoing(true)
+       .setContentIntent(contentIntent)
+       .addAction(
+         android.R.drawable.ic_delete,
+-        "Stop",
++        getString(R.string.pengtou_recording_stop),
+         stopPendingIntent
+       )
+       .setCategory(NotificationCompat.CATEGORY_SERVICE)
+diff --git a/android/src/main/res/values/pengtou_strings.xml b/android/src/main/res/values/pengtou_strings.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..64cc8b775611dff82a4be3f1fcc20bfc8987c386
+--- /dev/null
++++ b/android/src/main/res/values/pengtou_strings.xml
+@@ -0,0 +1,7 @@
++<resources>
++  <string name="pengtou_recording_channel_name">录音状态</string>
++  <string name="pengtou_recording_channel_description">录音进行时显示状态，点击可返回倾盖如故</string>
++  <string name="pengtou_recording_title">倾盖如故正在录音</string>
++  <string name="pengtou_recording_return">点击返回，暂停或完成这次记录</string>
++  <string name="pengtou_recording_stop">停止录音</string>
++</resources>
