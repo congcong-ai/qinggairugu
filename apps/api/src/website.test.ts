@@ -30,6 +30,13 @@ beforeAll(() => {
   writeFileSync(join(root, 'index.html'), '<h1>倾盖如故</h1>');
   writeFileSync(join(root, 'downloads/qinggai-android.apk'), apk);
   writeFileSync(join(root, 'assets/logo.webp'), 'RIFF');
+  writeFileSync(join(root, 'faq.html'), '<h1>组织者录音与参与者扫码问答</h1>');
+  writeFileSync(join(root, 'faq.md'), '# 产品问答');
+  writeFileSync(join(root, 'robots.txt'), 'User-agent: *\nAllow: /');
+  writeFileSync(
+    join(root, 'sitemap.xml'),
+    '<?xml version="1.0"?><urlset></urlset>',
+  );
 });
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 describe('官网与 GitCode 下载', () => {
@@ -55,6 +62,18 @@ describe('官网与 GitCode 下载', () => {
     expect(await (await app.request('/downloads/release.json')).json()).toEqual(
       { version: '0.1.1', bytes: 50226169 },
     );
+  });
+  it('问答与抓取入口可匿名读取，并提供对应内容类型', async () => {
+    expect(await (await app.request('/faq')).text()).toContain('组织者录音');
+    expect(
+      (await app.request('/faq.md')).headers.get('content-type'),
+    ).toContain('text/markdown');
+    expect(
+      (await app.request('/robots.txt')).headers.get('content-type'),
+    ).toContain('text/plain');
+    expect(
+      (await app.request('/sitemap.xml')).headers.get('content-type'),
+    ).toContain('xml');
   });
   it('Logo 使用 WebP MIME 类型', async () => {
     expect(

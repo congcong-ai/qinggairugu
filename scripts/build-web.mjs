@@ -1,4 +1,10 @@
 import {
+  appSchema,
+  buildProductPages,
+  miniappEntry,
+} from './build-product-pages.mjs';
+import { product } from '../apps/web/content/product.mjs';
+import {
   cpSync,
   existsSync,
   mkdirSync,
@@ -15,8 +21,24 @@ const output = resolve(root, 'apps/web/dist');
 // 官网构建不读取或打包 APK；安装包统一通过 GitCode Release 下载。
 rmSync(output, { recursive: true, force: true });
 mkdirSync(resolve(output, 'assets'), { recursive: true });
-for (const file of ['index.html', 'style.css', 'main.js', 'assets/logo.webp'])
+for (const file of ['style.css', 'faq.css', 'main.js'])
   cpSync(resolve(source, file), resolve(output, file));
+cpSync(resolve(source, 'assets'), resolve(output, 'assets'), {
+  recursive: true,
+});
+if (
+  product.miniappCode &&
+  !existsSync(resolve(output, product.miniappCode.slice(1)))
+)
+  throw new Error('小程序码配置对应的文件不存在');
+const index = readFileSync(resolve(source, 'index.html'), 'utf8')
+  .replace(
+    '<!-- app-schema -->',
+    `<script type="application/ld+json">${JSON.stringify(appSchema()).replaceAll('<', '\u003c')}</script>`,
+  )
+  .replace('<!-- miniapp-entry -->', miniappEntry());
+writeFileSync(resolve(output, 'index.html'), index);
+buildProductPages(output);
 const escape = (value) =>
   value
     .replaceAll('&', '&amp;')

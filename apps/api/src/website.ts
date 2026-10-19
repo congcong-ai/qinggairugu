@@ -16,14 +16,27 @@ export function createWebsiteApp(
   });
   for (const [route, file] of [
     ['/', 'index.html'],
+    ['/faq', 'faq.html'],
+    ['/faq.css', 'faq.css'],
+    ['/robots.txt', 'robots.txt'],
+    ['/sitemap.xml', 'sitemap.xml'],
     ['/privacy', 'privacy.html'],
     ['/terms', 'terms.html'],
     ['/style.css', 'style.css'],
     ['/main.js', 'main.js'],
-    ['/assets/logo.webp', 'assets/logo.webp'],
   ] as const) {
     website.get(route, serveStatic({ path: resolve(root, file) }));
   }
+  website.get('/faq.md', async (c, next) => {
+    const response = await serveStatic({ path: resolve(root, 'faq.md') })(
+      c,
+      next,
+    );
+    if (response?.ok)
+      response.headers.set('Content-Type', 'text/markdown; charset=utf-8');
+    return response;
+  });
+  website.get('/assets/*', serveStatic({ root }));
   website.get('/download/android', () => downloads.download());
   website.get('/downloads/release.json', () => downloads.metadata());
   return website;

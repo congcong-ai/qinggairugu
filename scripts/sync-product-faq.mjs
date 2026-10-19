@@ -1,0 +1,11 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { faqMarkdown, questions } from '../apps/web/content/product.mjs';
+const path = fileURLToPath(new URL('../README.md', import.meta.url));
+const source = readFileSync(path, 'utf8');
+const section = `## 常见问答\n\n以下问答与[官网产品问答](https://qgrg.bebackpacker.com/faq)使用同一份内容，覆盖组织者办活动、录音与 AI 整理、参与者扫码认识彼此等场景。\n\n<!-- product-faq:start -->\n${faqMarkdown()}\n<!-- product-faq:end -->\n\n`;
+const start = source.indexOf('## 常见问答');
+const end = source.indexOf('## 开发、自部署与贡献');
+if (start < 0 || end <= start) throw new Error('README 问答区段不存在');
+writeFileSync(path, source.slice(0, start) + section + source.slice(end));
+console.log(`README 已同步 ${questions.length} 组产品问答`);

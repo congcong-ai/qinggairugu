@@ -1569,3 +1569,159 @@ dialog p {
     margin-left: auto;
   }
 }
+
+.organizer-download-note {
+  font-size: 12px;
+  color: #697456;
+  line-height: 1.9;
+}
+.download-section {
+  grid-template-columns: 1.2fr 1fr;
+  gap: 42px;
+  align-items: stretch;
+}
+.download-copy {
+  align-self: center;
+}
+.participant-entry {
+  border-left: 1px solid #c8d1b7;
+  padding-left: 38px;
+  scroll-margin-top: 30px;
+}
+.participant-entry h3 {
+  font-size: 30px;
+  line-height: 1.4;
+  letter-spacing: -1px;
+  margin: 19px 0 12px;
+}
+.participant-entry > p {
+  font-size: 12px;
+  line-height: 1.9;
+  color: #697456;
+}
+.miniapp-code {
+  margin: 20px 0 15px;
+  width: 195px;
+  min-height: 195px;
+  border-radius: 17px;
+  padding: 18px;
+  background: #f5f6ed;
+  text-align: center;
+}
+.miniapp-code img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto 8px;
+}
+.miniapp-code figcaption {
+  font-size: 10px;
+  color: #6b7858;
+  line-height: 1.8;
+}
+.miniapp-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  border: 1px dashed #a6b591;
+}
+.miniapp-mark {
+  background: #d7e4c3;
+  width: 43px;
+  height: 43px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: #638546;
+  font-size: 27px;
+  margin-bottom: 4px;
+}
+.miniapp-placeholder b {
+  font-size: 14px;
+  font-weight: 600;
+}
+.miniapp-placeholder > span:not(.miniapp-mark) {
+  font-size: 11px;
+  color: #7c886c;
+}
+.miniapp-placeholder > small {
+  font-size: 8px;
+  color: #7c886c;
+  margin-top: 3px;
+}
+.miniapp-code-note {
+  display: block;
+  font-size: 9px;
+  color: #7a856a;
+  line-height: 1.9;
+}
+.faq-invite {
+  margin-bottom: 52px;
+  display: flex;
+  justify-content: space-between;
+  gap: 23px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 26px;
+}
+.faq-invite p {
+  color: #747c68;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.faq-invite > a {
+  font-size: 12px;
+  padding: 14px 18px;
+  border: 1px solid #b5c09f;
+  border-radius: 40px;
+  white-space: nowrap;
+}
+.faq-invite > a > span {
+  margin-left: 18px;
+}
+@media (max-width: 1100px) {
+  .download-section {
+    gap: 28px;
+  }
+  .participant-entry {
+    padding-left: 25px;
+  }
+}
+@media (max-width: 760px) {
+  .participant-entry {
+    border-left: 0;
+    border-top: 1px solid #c8d1b7;
+    padding: 30px 0 0;
+    margin-top: 30px;
+  }
+  .participant-entry h3 {
+    font-size: 28px;
+  }
+  .participant-entry > p {
+    font-size: 11px;
+  }
+  .organizer-download-note {
+    font-size: 11px;
+  }
+  .miniapp-code {
+    width: 185px;
+    min-height: 185px;
+  }
+  .miniapp-code-note {
+    font-size: 9px;
+  }
+  .faq-invite {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 32px;
+  }
+  .faq-invite p {
+    font-size: 11px;
+  }
+  .faq-invite > a {
+    font-size: 11px;
+  }
+}
