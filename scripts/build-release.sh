@@ -13,7 +13,7 @@ pnpm install --frozen-lockfile --offline
 pnpm exec eslint apps/api/src
 pnpm exec prettier --check --ignore-unknown scripts deploy ecosystem.config.cjs docs/PRODUCTION_DEPLOYMENT.md .deploy.env.example package.json apps/api/src/server.ts
 pnpm --filter @pengtou/api... typecheck
-pnpm exec vitest run apps/api/src/app.test.ts apps/api/src/qr.test.ts apps/api/src/website.test.ts apps/api/src/releases/download.test.ts apps/web/content/product.test.mjs scripts/android-release.test.mjs
+pnpm exec vitest run apps/api/src/app.test.ts apps/api/src/qr.test.ts apps/api/src/website.test.ts apps/api/src/releases/download.test.ts apps/web/content/product.test.mjs scripts/android-release.test.mjs scripts/validate-production-env.test.mjs
 pnpm build:web
 pnpm --filter @pengtou/api build
 pnpm --filter @pengtou/api exec tsup ../../packages/database/src/migrate-cli.ts --format esm --out-dir ../../packages/database/dist

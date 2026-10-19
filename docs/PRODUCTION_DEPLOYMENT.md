@@ -49,6 +49,8 @@ LETSENCRYPT_EMAIL=实际证书通知邮箱 pnpm server:install china
 
 安装完成后，用户在服务器 `shared/.env` 填写正式 AppID 对应的 `WECHAT_APP_SECRET`。正式小程序尚未发布时，可明确设置 `WECHAT_MINIAPP_ENV=develop` 或 `trial` 验证；正式上线必须改回 `release` 并发布 `pages/session/index`。
 
+配置校验失败时会逐项列出变量名与要求，不输出配置值。体验版环境应填写 `WECHAT_MINIAPP_ENV=trial`，不要误写为 `trail`。
+
 目录：
 
 ```text
