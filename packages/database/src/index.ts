@@ -7,6 +7,6 @@ export function connectDatabase(url: string) {
 }
 export type Database = ReturnType<typeof connectDatabase>['db'];
 export { schema };
-export { eq, and, gt, desc } from 'drizzle-orm';
+export { eq, and, gt, desc, or, isNull, sql, asc, lt } from 'drizzle-orm';
 
 export { default as postgres } from 'postgres';

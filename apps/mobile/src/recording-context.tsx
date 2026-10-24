@@ -1,4 +1,4 @@
-import { activeAIJobs } from './activity';
+import { activeAIJobs, activeAudioImports } from './activity';
 import {
   createContext,
   useContext,
@@ -137,8 +137,11 @@ export function RecordingProvider({ children }: PropsWithChildren) {
   const start = (existingId?: string) =>
     run(async () => {
       if (activeRef.current) return;
-      if (existingId && activeAIJobs.has(existingId)) {
-        setError('这场正在进行 AI 整理，请完成后再追加录音');
+      if (
+        existingId &&
+        (activeAIJobs.has(existingId) || activeAudioImports.has(existingId))
+      ) {
+        setError('这场正在整理或导入录音，请完成后再追加录音');
         return;
       }
       const permission = await AudioModule.requestRecordingPermissionsAsync();

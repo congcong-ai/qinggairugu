@@ -35,6 +35,33 @@ CREATE INDEX embedding_session_idx ON embedding_chunks(session_id);
 `,
   },
   { version: 2, sql: 'ALTER TABLE sessions ADD COLUMN starts_at TEXT;' },
+  {
+    version: 3,
+    sql: `
+CREATE TABLE personal_entries (id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE, notes TEXT NOT NULL DEFAULT '', people TEXT NOT NULL DEFAULT '[]', occurred_at TEXT NOT NULL, location TEXT NOT NULL DEFAULT '', category TEXT NOT NULL DEFAULT '', cloud_entry_id TEXT, cloud_version INTEGER NOT NULL DEFAULT 0, cloud_owner_id TEXT);
+CREATE TABLE personal_photos (id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE, uri TEXT NOT NULL);
+CREATE TABLE cloud_activity_cache (id TEXT NOT NULL, user_id TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY(id,user_id));
+CREATE TABLE pending_operations (id TEXT PRIMARY KEY, kind TEXT NOT NULL, target_id TEXT NOT NULL, binding_id TEXT NOT NULL, created_at TEXT NOT NULL);
+`,
+  },
+  {
+    version: 4,
+    sql: `
+ALTER TABLE recordings ADD COLUMN source TEXT NOT NULL DEFAULT 'recorded';
+ALTER TABLE recordings ADD COLUMN mime TEXT;
+ALTER TABLE recordings ADD COLUMN bytes INTEGER;
+ALTER TABLE recordings ADD COLUMN fingerprint TEXT;
+ALTER TABLE recordings ADD COLUMN import_state TEXT NOT NULL DEFAULT 'ready';
+CREATE INDEX recordings_fingerprint_idx ON recordings(fingerprint);
+`,
+  },
+  {
+    version: 5,
+    sql: `
+CREATE TABLE ai_sync_state (session_id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE, binding_id TEXT NOT NULL, remote_id TEXT, remote_version INTEGER NOT NULL DEFAULT 0, source_version TEXT NOT NULL DEFAULT '', fields TEXT NOT NULL DEFAULT '[]');
+ALTER TABLE sessions ADD COLUMN source_version TEXT;
+`,
+  },
 ] as const;
 export async function migrate(db: MigrationDatabase) {
   await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');

@@ -5,6 +5,9 @@ import {
   joinSessionSchema,
   publishRecapSchema,
   profileSchema,
+  entrySchema,
+  updateEntrySchema,
+  privateAISchema,
 } from '@pengtou/contracts';
 const device = [{ installationId: [], installationSecret: [] }];
 const user = [{ bearer: [] }];
@@ -34,8 +37,9 @@ export const openapi = {
   openapi: '3.1.0',
   info: {
     title: '倾盖如故共享 API',
-    version: '0.1.0',
-    description: '不接收录音、完整私人转写、Embedding 或用户百炼 Key。',
+    version: '0.2.0',
+    description:
+      '录音、Embedding、百炼 Key 不上传。本人明确授权后可同步私有 AI 文本，全文单独选择；与本场共享回顾分别鉴权。',
   },
   components: {
     securitySchemes: {
@@ -57,9 +61,127 @@ export const openapi = {
       JoinSession: z.toJSONSchema(joinSessionSchema),
       PublishRecap: z.toJSONSchema(publishRecapSchema),
       Profile: z.toJSONSchema(profileSchema),
+      PersonalEntry: z.toJSONSchema(entrySchema),
+      UpdateEntry: z.toJSONSchema(updateEntrySchema),
+      PrivateAI: z.toJSONSchema(privateAISchema),
     },
   },
   paths: {
+    '/me/activities': {
+      get: {
+        summary: '本人统一活动时间线，offset 分页，每页 50 条',
+        security: either,
+        responses,
+      },
+    },
+    '/me/entries': {
+      get: { summary: '本人私人记录', security: either, responses },
+      post: {
+        summary: '独立记录或关联已加入场次',
+        security: either,
+        requestBody: jsonBody(schemaRef('PersonalEntry')),
+        responses,
+      },
+    },
+    '/me/entries/{id}': {
+      parameters: id,
+      get: { summary: '读取本人记录', security: either, responses },
+      patch: {
+        summary: '按 version 更新本人记录或显式关联/解除关联',
+        security: either,
+        requestBody: jsonBody(schemaRef('UpdateEntry')),
+        responses,
+      },
+      delete: {
+        summary: '删除本人文字记录，不影响共享活动',
+        security: either,
+        responses,
+      },
+    },
+    '/me/private-ai': {
+      get: {
+        summary: '本人私有同步结果，来源绑定须有效',
+        security: either,
+        responses,
+      },
+      put: {
+        summary: '绑定 App 明确授权的文字同步，最大 4 MiB',
+        security: device,
+        requestBody: jsonBody(schemaRef('PrivateAI')),
+        responses,
+      },
+    },
+    '/me/private-ai/state/{id}': {
+      parameters: id,
+      get: {
+        summary:
+          '当前绑定设备的同步版本及授权范围，不返回正文；sourceVersion 用于提示本地有待同步的新版本',
+        security: device,
+        responses,
+      },
+    },
+    '/me/private-ai/{id}': {
+      parameters: id,
+      delete: {
+        summary: '删除云端副本并保留撤销版本防止旧任务复活',
+        security: either,
+        responses,
+      },
+    },
+    '/bindings': {
+      get: { summary: '本人有效关联设备', security: either, responses },
+    },
+    '/bindings/challenges': {
+      post: {
+        summary: 'App 申请 5 分钟一次性关联码',
+        security: device,
+        responses,
+      },
+    },
+    '/bindings/claim': {
+      post: {
+        summary: '微信用户确认认领关联码，限速 10 次/5 分钟',
+        security: user,
+        requestBody: jsonBody({
+          type: 'object',
+          required: ['code'],
+          properties: { code: { type: 'string' } },
+        }),
+        responses,
+      },
+    },
+    '/bindings/challenges/{id}': {
+      parameters: id,
+      get: { summary: '来源设备查看认领状态', security: device, responses },
+    },
+    '/bindings/challenges/{id}/confirm': {
+      parameters: id,
+      post: {
+        summary: '来源设备核对微信身份后确认关联',
+        security: device,
+        requestBody: jsonBody({
+          type: 'object',
+          required: ['confirm'],
+          properties: { confirm: { const: true } },
+        }),
+        responses,
+      },
+    },
+    '/bindings/{id}': {
+      parameters: id,
+      delete: {
+        summary: '本人或来源设备解绑，删除私有 AI 副本',
+        security: either,
+        responses,
+      },
+    },
+    '/me/data': {
+      delete: {
+        summary: '微信用户明确删除本人云端资料并注销关联',
+        security: user,
+        responses,
+      },
+    },
     '/health': {
       get: {
         summary: '健康检查',
@@ -93,8 +215,8 @@ export const openapi = {
     },
     '/sessions': {
       post: {
-        summary: '创建一场',
-        security: device,
+        summary: '设备或微信用户发起一场',
+        security: either,
         requestBody: jsonBody(schemaRef('CreateSession')),
         responses: { ...responses, '201': { description: '已创建或幂等返回' } },
       },
@@ -132,8 +254,9 @@ export const openapi = {
     },
     '/sessions/{id}/recap': {
       parameters: id,
+      delete: { summary: '发起者撤回共享回顾', security: either, responses },
       get: {
-        summary: '读取已发布回顾，未发布返回 null',
+        summary: '读取已发布回顾，未发布/撤回返回 null，并返回当前 version',
         security: either,
         responses,
       },

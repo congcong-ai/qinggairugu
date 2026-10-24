@@ -19,3 +19,5 @@ coverage/
 **/project.private.config.json
 .deploy.env
 artifacts/
+
+.swc/

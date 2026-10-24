@@ -1,3 +1,4 @@
+import { LocalMediaNotice } from '../src/local-media-notice';
 import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -134,10 +135,7 @@ export default function Recording() {
           }
         />
       )}
-      <Text style={styles.caption}>
-        录音原文件长期保存在你的设备。AI 整理时会临时发送给你配置的 AI
-        服务处理。
-      </Text>
+      <LocalMediaNotice />
       <Action secondary label="返回首页" onPress={() => router.replace('/')} />
     </Page>
   );

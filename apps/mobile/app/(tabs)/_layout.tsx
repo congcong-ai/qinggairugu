@@ -18,7 +18,7 @@ export default function TabsLayout() {
     >
       {[
         ['index', '首页', '◉'],
-        ['records', '记录', '▤'],
+        ['records', '我的活动', '▤'],
         ['people', '人', '◎'],
         ['me', '我的', '◌'],
       ].map(([name, title, icon]) => (

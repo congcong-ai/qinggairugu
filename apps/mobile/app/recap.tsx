@@ -3,13 +3,29 @@ import { Alert, Text, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Page, Heading, Action, styles } from '../src/ui';
 import { getDatabase } from '../src/storage/database';
-import { ensureCloudSession, cloudRequest } from '../src/cloud';
+import { ensureCloudSession, cloudRequest, cloudSessionId } from '../src/cloud';
 export default function Recap() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [content, setContent] = useState('');
+  const [version, setVersion] = useState<number | null>(null);
+  const [organizer, setOrganizer] = useState(false);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => {
+    void ensureCloudSession(id)
+      .then(() => cloudSessionId(id))
+      .then(async (cloudId) => {
+        const session = await cloudRequest<{ isOrganizer: boolean }>(
+          `/sessions/${cloudId}`,
+        );
+        setOrganizer(session.isOrganizer);
+        const data = await cloudRequest<{
+          recap: { content: string; version: number } | null;
+          version: number;
+        }>(`/sessions/${cloudId}/recap`);
+        setVersion(data.version);
+      })
+      .catch(() => setStatus('联网检查本场权限后才可发布'));
     void getDatabase()
       .then((db) =>
         db.getFirstAsync<{ content: string }>(
@@ -33,9 +49,13 @@ export default function Recap() {
       );
       if (publish) {
         await ensureCloudSession(id);
-        await cloudRequest(`/sessions/${id}/recap`, 'POST', {
-          content: content.trim(),
-        });
+        const cloudId = await cloudSessionId(id);
+        const result = await cloudRequest<{ version: number }>(
+          `/sessions/${cloudId}/recap`,
+          'POST',
+          { content: content.trim(), version: version ?? 0 },
+        );
+        setVersion(result.version);
         setStatus('已发布，本场参与者可以查看');
       } else setStatus('草稿已保存在本机');
     } catch {
@@ -74,7 +94,7 @@ export default function Recap() {
       />
       <Action
         label="发布这场回顾"
-        disabled={busy || !content.trim()}
+        disabled={busy || !content.trim() || !organizer || version === null}
         onPress={() =>
           Alert.alert('发布这场回顾？', '本场参与者将能看到上面的内容。', [
             { text: '再检查一下', style: 'cancel' },
@@ -82,6 +102,34 @@ export default function Recap() {
           ])
         }
       />
+      {organizer && (
+        <Action
+          secondary
+          label="撤回这场回顾"
+          disabled={busy}
+          onPress={() =>
+            Alert.alert('撤回回顾？', '本场参与者将不能再获取回顾正文。', [
+              { text: '取消', style: 'cancel' },
+              {
+                text: '确认撤回',
+                onPress: () => {
+                  setBusy(true);
+                  void cloudSessionId(id)
+                    .then((cid) =>
+                      cloudRequest(`/sessions/${cid}/recap`, 'DELETE'),
+                    )
+                    .then(() => {
+                      setStatus('已撤回');
+                      setVersion((v) => (v ?? 0) + 1);
+                    })
+                    .catch(() => setStatus('撤回未完成'))
+                    .finally(() => setBusy(false));
+                },
+              },
+            ])
+          }
+        />
+      )}
       <Text style={styles.body}>{status}</Text>
     </Page>
   );

@@ -13,7 +13,7 @@ pnpm install --frozen-lockfile --offline
 pnpm exec eslint apps/api/src
 pnpm exec prettier --check --ignore-unknown scripts deploy ecosystem.config.cjs docs/PRODUCTION_DEPLOYMENT.md .deploy.env.example package.json apps/api/src/server.ts
 pnpm --filter @pengtou/api... typecheck
-pnpm exec vitest run apps/api/src/app.test.ts apps/api/src/qr.test.ts apps/api/src/website.test.ts apps/api/src/releases/download.test.ts apps/web/content/product.test.mjs scripts/android-release.test.mjs scripts/validate-production-env.test.mjs
+pnpm exec vitest run apps/api/src/app.test.ts apps/api/src/qr.test.ts apps/api/src/website.test.ts apps/api/src/releases/download.test.ts apps/web/content/product.test.mjs scripts/android-release.test.mjs scripts/validate-production-env.test.mjs scripts/upgrade-nginx.test.mjs
 pnpm build:web
 pnpm --filter @pengtou/api build
 pnpm --filter @pengtou/api exec tsup ../../packages/database/src/migrate-cli.ts --format esm --out-dir ../../packages/database/dist
@@ -26,7 +26,7 @@ for manifest in apps/api/package.json packages/database/package.json packages/co
 done
 cp -R patches deploy "$stage/"
 mkdir -p "$stage/scripts/lib"
-cp scripts/server-install.sh scripts/server-deploy.sh scripts/native-service.sh scripts/health-check.sh scripts/server-port-audit.py scripts/validate-production-env.mjs scripts/database-command.mjs "$stage/scripts/"
+cp scripts/server-install.sh scripts/server-deploy.sh scripts/native-service.sh scripts/health-check.sh scripts/server-port-audit.py scripts/validate-production-env.mjs scripts/database-command.mjs scripts/upgrade-nginx.mjs "$stage/scripts/"
 cp scripts/lib/deploy-proxy.sh "$stage/scripts/lib/"
 cp -R apps/api/dist "$stage/apps/api/"
 mkdir -p "$stage/apps/web"

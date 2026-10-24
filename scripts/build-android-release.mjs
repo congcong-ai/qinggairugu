@@ -12,6 +12,7 @@ import {
   androidSourceHash,
   androidArchitectures,
   releaseManifestPath,
+  assert16KBElf,
 } from './lib/android-release.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -87,6 +88,29 @@ run(resolve(buildTools, 'apksigner'), [
   apk,
 ]);
 run(resolve(buildTools, 'zipalign'), ['-c', '-P', '16', '4', apk]);
+const nativeFiles = execFileSync(resolve(buildTools, 'aapt'), ['list', apk], {
+  env,
+  encoding: 'utf8',
+})
+  .split('\n')
+  .filter((name) => /^lib\/[^/]+\/[^/]+\.so$/.test(name));
+const actualArchitectures = [
+  ...new Set(nativeFiles.map((name) => name.split('/')[1])),
+].sort();
+if (
+  JSON.stringify(actualArchitectures) !==
+  JSON.stringify([...androidArchitectures].sort())
+)
+  throw new Error('APK 实际原生架构与发布配置不一致');
+for (const name of nativeFiles.filter((name) =>
+  /^lib\/(arm64-v8a|x86_64)\//.test(name),
+)) {
+  const bytes = execFileSync('unzip', ['-p', apk, name], {
+    env,
+    maxBuffer: 128 * 1024 * 1024,
+  });
+  assert16KBElf(bytes, name);
+}
 const badging = execFileSync(
   resolve(buildTools, 'aapt'),
   ['dump', 'badging', apk],

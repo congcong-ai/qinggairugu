@@ -10,6 +10,8 @@ source "$release/scripts/lib/deploy-proxy.sh"
 configure_deploy_proxy
 node --env-file="$root/shared/.env" "$release/scripts/validate-production-env.mjs"
 port=$(node --env-file="$root/shared/.env" -p 'process.env.PORT')
+# 保留既有 TLS 配置，追加兼容旧 API 的同步体积例外；失败会原样恢复 Nginx。
+node "$release/scripts/upgrade-nginx.mjs" /etc/nginx/sites-available/qinggai.conf "$port" "$root/shared/backups/$(basename "$release").nginx.conf"
 old=
 if [[ -L $root/current ]]; then old=$(readlink -f "$root/current"); fi
 [[ -z $old || $old == "$root/releases/"* ]] || exit 1
@@ -37,8 +39,9 @@ umask 077
 backup="$root/shared/backups/$(basename "$release").dump"
 node --env-file="$root/shared/.env" "$release/scripts/database-command.mjs" backup "$backup"
 node --env-file="$root/shared/.env" "$release/packages/database/dist/migrate-cli.js"
-chown -R root:qinggai "$release"
-chmod -R g+rX,o-rwx "$release"
+# node_modules 可能与其他项目通过 pnpm store 硬链接共享，不能修改共享 inode 权限。
+find "$release" -name node_modules -type d -prune -o -exec chown -h root:qinggai {} +
+find "$release" -name node_modules -type d -prune -o -type l -prune -o -exec chmod g+rX,o-rwx {} +
 pm() { (cd /var/lib/qinggai && runuser -u qinggai -- env -u DATABASE_URL -u WECHAT_APP_SECRET HOME=/var/lib/qinggai PM2_HOME=/var/lib/qinggai/.pm2 pm2 "$@"); }
 health() { "$release/scripts/health-check.sh" "http://127.0.0.1:$port"; }
 rollback_on_failure() {

@@ -5,13 +5,18 @@ server {
     server_name qgrg.bebackpacker.com;
     client_max_body_size 1m;
     add_header X-Content-Type-Options nosniff always;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_connect_timeout 5s;
+    proxy_read_timeout 30s;
+    # 仅本人 AI 文字同步允许较长全文；API 仍执行鉴权、字段白名单和 4 MiB 上限。
+    location = /me/private-ai {
+        client_max_body_size 4m;
+        proxy_pass http://127.0.0.1:__API_PORT__;
+    }
     location / {
         proxy_pass http://127.0.0.1:__API_PORT__;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_connect_timeout 5s;
-        proxy_read_timeout 30s;
     }
 }

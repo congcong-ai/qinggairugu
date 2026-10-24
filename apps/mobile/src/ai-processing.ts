@@ -1,4 +1,4 @@
-import { activeAIJobs } from './activity';
+import { activeAIJobs, activeAudioImports } from './activity';
 import { File } from 'expo-file-system';
 import { fetch as expoFetch } from 'expo/fetch';
 import {
@@ -59,6 +59,7 @@ export async function processSession(
   id: string,
   progress: (value: string) => void,
 ) {
+  if (activeAudioImports.has(id)) throw new Error('请等待录音导入完成');
   if (running.has(id)) throw new Error('本场正在整理，请稍后再看');
   running.add(id);
   try {
@@ -223,6 +224,11 @@ export async function processSession(
           id,
           text,
         );
+      await txn.runAsync(
+        'UPDATE sessions SET source_version=? WHERE id=?',
+        new Date().toISOString(),
+        id,
+      );
       for (const [i, chunk] of chunks.entries())
         await txn.runAsync(
           'INSERT INTO embedding_chunks(id,session_id,text,vector,model,start_ms,speaker_id) VALUES(?,?,?,?,?,?,?)',

@@ -18,6 +18,7 @@ import {
   readCurrentAndroidRelease,
   checkOnlineAndroidRelease,
   releaseManifestPath,
+  assert16KBElf,
 } from './lib/android-release.mjs';
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -230,4 +231,27 @@ it('server:deploy 在 APK 检查失败时退出，SSH 和上传均未执行', ()
   expect(result.status).toBe(7);
   expect(result.stderr).toContain('模拟 APK 检查失败');
   expect(existsSync(marker)).toBe(false);
+});
+
+function elfFixture(alignment) {
+  const bytes = Buffer.alloc(120);
+  bytes.writeUInt32LE(0x464c457f, 0);
+  bytes[4] = 2;
+  bytes[5] = 1;
+  bytes.writeBigUInt64LE(64n, 32);
+  bytes.writeUInt16LE(56, 54);
+  bytes.writeUInt16LE(1, 56);
+  bytes.writeUInt32LE(1, 64);
+  bytes.writeBigUInt64LE(BigInt(alignment), 112);
+  return bytes;
+}
+it('正式 APK 检查拒绝 4 KB ELF，即使 ZIP 本身已对齐', () => {
+  expect(() => assert16KBElf(elfFixture(4096), 'vec.so')).toThrow('16 KB');
+  expect(assert16KBElf(elfFixture(16384))).toBe(1);
+});
+it('截断段表和错误文件不能作为合格原生库', () => {
+  expect(() => assert16KBElf(Buffer.from('not ELF'))).toThrow('ELF');
+  expect(() => assert16KBElf(elfFixture(16384).subarray(0, 100))).toThrow(
+    '段表',
+  );
 });

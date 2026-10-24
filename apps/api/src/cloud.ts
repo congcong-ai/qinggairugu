@@ -1,3 +1,10 @@
+import {
+  sessionAccess,
+  activitySessions,
+  userIdFor,
+  type Actor,
+} from './permissions';
+import { mountMemoryRoutes } from './memory';
 import { sessionQr, type MiniappEnv } from './qr';
 import {
   randomBytes,
@@ -15,10 +22,9 @@ import {
   publishRecapSchema,
   profileSchema,
 } from '@pengtou/contracts';
-import { type Database, schema, eq, and, gt, desc } from '@pengtou/database';
+import { type Database, schema, eq, and, gt, sql } from '@pengtou/database';
 const hash = (value: string) =>
   createHash('sha256').update(value).digest('hex');
-type Actor = { kind: 'device'; id: string } | { kind: 'user'; id: string };
 interface Config {
   allowDevAuth: boolean;
   wechatAppId?: string;
@@ -27,14 +33,23 @@ interface Config {
 }
 export function createCloudApp(db: Database, config: Config) {
   const app = new Hono<{ Variables: { actor: Actor | null } }>();
-  app.use(
-    '*',
-    bodyLimit({
-      maxSize: 128 * 1024,
-      onError: (c) => c.json({ error: '请求内容过大' }, 413),
-    }),
+  const normalLimit = bodyLimit({
+    maxSize: 128 * 1024,
+    // 私有文本同步单独受限，不放宽其它接口。
+
+    onError: (c) => c.json({ error: '请求内容过大' }, 413),
+  });
+  const syncLimit = bodyLimit({
+    maxSize: 4 * 1024 * 1024,
+    onError: (c) => c.json({ error: '同步文本过大' }, 413),
+  });
+  app.use('*', (c, next) =>
+    c.req.path === '/me/private-ai' && c.req.method === 'PUT'
+      ? syncLimit(c, next)
+      : normalLimit(c, next),
   );
   app.use('*', async (c, next) => {
+    c.header('Cache-Control', 'no-store');
     let actor: Actor | null = null;
     const deviceId = c.req.header('x-installation-id');
     const secret = c.req.header('x-installation-secret');
@@ -135,14 +150,14 @@ export function createCloudApp(db: Database, config: Config) {
   });
   app.post('/sessions', async (c) => {
     const actor = c.get('actor');
-    if (actor?.kind !== 'device')
-      return c.json({ error: '需要主办方设备身份' }, 401);
+    if (!actor) return c.json({ error: '请先建立身份' }, 401);
     const input = createSessionSchema.parse(await c.req.json());
     await db
       .insert(schema.sessions)
       .values({
         ...input,
-        organizerId: actor.id,
+        organizerId: actor.kind === 'device' ? actor.id : null,
+        organizerUserId: actor.kind === 'user' ? actor.id : null,
         startsAt: input.startsAt ? new Date(input.startsAt) : null,
       })
       .onConflictDoNothing();
@@ -150,58 +165,65 @@ export function createCloudApp(db: Database, config: Config) {
       .select()
       .from(schema.sessions)
       .where(eq(schema.sessions.id, input.id));
-    if (!row || row.organizerId !== actor.id)
+    if (!row || !(await sessionAccess(db, input.id, actor)).organizer)
       return c.json({ error: '无法创建此记录' }, 409);
     return c.json(row, 201);
   });
   app.get('/me/profile', async (c) => {
     const actor = c.get('actor');
-    if (actor?.kind !== 'user') return c.json({ error: '请先加入身份' }, 401);
+    const uid = await userIdFor(db, actor);
+    if (!uid) return c.json({ error: '请先登录或关联' }, 401);
     const [user] = await db
       .select({ profile: schema.users.profile })
       .from(schema.users)
-      .where(eq(schema.users.id, actor.id));
+      .where(eq(schema.users.id, uid));
     return c.json(user ?? { profile: null });
   });
   app.put('/me/profile', async (c) => {
     const actor = c.get('actor');
-    if (actor?.kind !== 'user') return c.json({ error: '请先登录' }, 401);
+    const uid = await userIdFor(db, actor);
+    if (!uid) return c.json({ error: '请先登录或关联' }, 401);
     const profile = profileSchema.parse(await c.req.json());
     await db
       .update(schema.users)
       .set({ profile })
-      .where(eq(schema.users.id, actor.id));
+      .where(eq(schema.users.id, uid));
     return c.json({ profile });
   });
   app.delete('/me/profile', async (c) => {
     const actor = c.get('actor');
-    if (actor?.kind !== 'user') return c.json({ error: '请先登录' }, 401);
+    const uid = await userIdFor(db, actor);
+    if (!uid) return c.json({ error: '请先登录或关联' }, 401);
     await db
       .update(schema.users)
       .set({ profile: null })
-      .where(eq(schema.users.id, actor.id));
+      .where(eq(schema.users.id, uid));
     return c.json({ deleted: true });
   });
   app.get('/me/sessions', async (c) => {
     const actor = c.get('actor');
-    if (actor?.kind !== 'user') return c.json({ error: '请先登录' }, 401);
-    const rows = await db
-      .select({ session: schema.sessions, recap: schema.recaps.publishedAt })
-      .from(schema.participants)
-      .innerJoin(
-        schema.sessions,
-        eq(schema.participants.sessionId, schema.sessions.id),
-      )
-      .leftJoin(schema.recaps, eq(schema.recaps.sessionId, schema.sessions.id))
-      .where(eq(schema.participants.userId, actor.id))
-      .orderBy(desc(schema.sessions.createdAt));
+    if (!actor) return c.json({ error: '请先建立身份' }, 401);
+    const { owned, joined } = await activitySessions(db, actor);
+    const rows = [
+      ...new Map([...joined, ...owned].map((r) => [r.id, r])).values(),
+    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return c.json(
-      rows.map((r) => ({
-        id: r.session.id,
-        title: r.session.title,
-        createdAt: r.session.createdAt,
-        recapPublishedAt: r.recap,
-      })),
+      await Promise.all(
+        rows.map(async (row) => {
+          const [recap] = await db
+            .select()
+            .from(schema.recaps)
+            .where(eq(schema.recaps.sessionId, row.id));
+          return {
+            id: row.id,
+            title: row.title,
+            createdAt: row.createdAt,
+            recapPublishedAt: recap?.withdrawnAt
+              ? null
+              : (recap?.publishedAt ?? null),
+          };
+        }),
+      ),
     );
   });
   app.use('/sessions/:id/*', async (c, next) => {
@@ -227,13 +249,16 @@ export function createCloudApp(db: Database, config: Config) {
       participantVisibility: row.participantVisibility,
       createdAt: row.createdAt,
       participantCount: people.length,
+      isOrganizer: (await access(id, c.get('actor'))).organizer,
+      isMember: (await access(id, c.get('actor'))).member,
+      archived: !!row.archivedAt,
     });
   });
   app.patch('/sessions/:id', async (c) => {
     const id = z.uuid().parse(c.req.param('id'));
     const actor = c.get('actor');
-    if (actor?.kind !== 'device')
-      return c.json({ error: '仅主办方可修改' }, 403);
+    if (!(await sessionAccess(db, id, actor)).organizer)
+      return c.json({ error: '仅发起者可修改' }, 403);
     const input = updateSessionSchema.parse(await c.req.json());
     const [row] = await db
       .update(schema.sessions)
@@ -247,29 +272,26 @@ export function createCloudApp(db: Database, config: Config) {
               ? new Date(input.startsAt)
               : null,
       })
-      .where(
-        and(
-          eq(schema.sessions.id, id),
-          eq(schema.sessions.organizerId, actor.id),
-        ),
-      )
+      .where(eq(schema.sessions.id, id))
       .returning();
     return row ? c.json(row) : c.json({ error: '无权修改此记录' }, 403);
   });
   app.post('/sessions/:id/join', async (c) => {
     const id = z.uuid().parse(c.req.param('id'));
     const actor = c.get('actor');
-    if (actor?.kind !== 'user') return c.json({ error: '请先微信登录' }, 401);
+    const uid = await userIdFor(db, actor);
+    if (!uid) return c.json({ error: '请先微信登录或绑定' }, 401);
     const input = joinSessionSchema.parse(await c.req.json());
     const [session] = await db
       .select()
       .from(schema.sessions)
       .where(eq(schema.sessions.id, id));
-    if (!session) return c.json({ error: '这场不存在' }, 404);
+    if (!session || session.archivedAt)
+      return c.json({ error: '这场不存在或已归档' }, 404);
     await db.transaction(async (txn) => {
       await txn
         .insert(schema.participants)
-        .values({ sessionId: id, userId: actor.id, profile: input.profile })
+        .values({ sessionId: id, userId: uid, profile: input.profile })
         .onConflictDoUpdate({
           target: [schema.participants.sessionId, schema.participants.userId],
           set: { profile: input.profile },
@@ -278,34 +300,12 @@ export function createCloudApp(db: Database, config: Config) {
         await txn
           .update(schema.users)
           .set({ profile: input.profile })
-          .where(eq(schema.users.id, actor.id));
+          .where(eq(schema.users.id, uid));
     });
     return c.json({ joined: true }, 201);
   });
-  async function access(id: string, actor: Actor | null) {
-    const [session] = await db
-      .select()
-      .from(schema.sessions)
-      .where(eq(schema.sessions.id, id));
-    if (!session) return { session, organizer: false, member: false };
-    const organizer =
-      actor?.kind === 'device' && actor.id === session.organizerId;
-    const membership =
-      actor?.kind === 'user'
-        ? (
-            await db
-              .select()
-              .from(schema.participants)
-              .where(
-                and(
-                  eq(schema.participants.sessionId, id),
-                  eq(schema.participants.userId, actor.id),
-                ),
-              )
-          )[0]
-        : null;
-    return { session, organizer, member: !!membership };
-  }
+  const access = (id: string, actor: Actor | null) =>
+    sessionAccess(db, id, actor);
   app.get('/sessions/:id/participants', async (c) => {
     const id = z.uuid().parse(c.req.param('id'));
     const permission = await access(id, c.get('actor'));
@@ -332,16 +332,32 @@ export function createCloudApp(db: Database, config: Config) {
     const id = z.uuid().parse(c.req.param('id'));
     if (!(await access(id, c.get('actor'))).organizer)
       return c.json({ error: '仅主办方可发布' }, 403);
-    const { content } = publishRecapSchema.parse(await c.req.json());
+    const { content, version } = publishRecapSchema.parse(await c.req.json());
+    const existing = (
+      await db
+        .select()
+        .from(schema.recaps)
+        .where(eq(schema.recaps.sessionId, id))
+    )[0];
+    if (version !== undefined && (existing?.version ?? 0) !== version)
+      return c.json({ error: '回顾已更新，请重新查看' }, 409);
     const [row] = await db
       .insert(schema.recaps)
       .values({ sessionId: id, content })
       .onConflictDoUpdate({
         target: schema.recaps.sessionId,
-        set: { content, publishedAt: new Date() },
+        set: {
+          content,
+          publishedAt: new Date(),
+          withdrawnAt: null,
+          version: sql`${schema.recaps.version}+1`,
+        },
+        ...(version !== undefined
+          ? { setWhere: eq(schema.recaps.version, version) }
+          : {}),
       })
       .returning();
-    return c.json(row);
+    return row ? c.json(row) : c.json({ error: '回顾版本冲突' }, 409);
   });
   app.get('/sessions/:id/recap', async (c) => {
     const id = z.uuid().parse(c.req.param('id'));
@@ -352,7 +368,10 @@ export function createCloudApp(db: Database, config: Config) {
       .select()
       .from(schema.recaps)
       .where(eq(schema.recaps.sessionId, id));
-    return c.json({ recap: row ?? null });
+    return c.json({
+      recap: row?.withdrawnAt ? null : (row ?? null),
+      version: row?.version ?? 0,
+    });
   });
   app.get('/sessions/:id/qr', async (c) => {
     const id = z.uuid().parse(c.req.param('id'));
@@ -367,6 +386,7 @@ export function createCloudApp(db: Database, config: Config) {
       ),
     );
   });
+  mountMemoryRoutes(app, db);
   app.onError((error, c) => {
     if (error instanceof z.ZodError || error instanceof SyntaxError)
       return c.json({ error: '请求格式不正确' }, 400);

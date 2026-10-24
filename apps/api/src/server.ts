@@ -45,7 +45,7 @@ if (process.env.NODE_ENV === 'production') {
 app.get('/health/db', async (c) => {
   if (!database) return c.json({ status: 'unavailable' }, 503);
   try {
-    await database.sql`SELECT 1 FROM sessions LIMIT 1`;
+    await database.sql`SELECT organizer_user_id,archived_at FROM sessions LIMIT 1`;
     return c.json({ status: 'ok' });
   } catch {
     return c.json({ status: 'unavailable' }, 503);

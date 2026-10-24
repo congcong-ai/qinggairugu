@@ -1,7 +1,13 @@
-import { useState } from 'react';
+import { sessionIdFromRoute } from '../../lib/session-route';
+import { useState, useRef } from 'react';
 import { View, Text, Input, Button, Switch } from '@tarojs/components';
 import Taro, { useLoad } from '@tarojs/taro';
-import { profileSchema, type Profile } from '@pengtou/contracts';
+import {
+  profileSchema,
+  type Profile,
+  type PersonalEntry,
+  type CloudSession,
+} from '@pengtou/contracts';
 import { login, request, currentSessionId, message } from '../../lib/api';
 const fields: [keyof Profile, string][] = [
   ['name', '名字 / 昵称'],
@@ -24,9 +30,18 @@ export default function ProfilePage() {
   const [save, setSave] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const ownSession = useRef('');
   const [editSaved, setEditSaved] = useState(false);
   useLoad((options) => {
     setEditSaved(options.mode === 'saved');
+    if (options.mode !== 'saved') {
+      try {
+        ownSession.current = sessionIdFromRoute(options, currentSessionId());
+      } catch (e) {
+        setError(message(e));
+        return;
+      }
+    }
     void login()
       .then(() => request<{ profile: Profile | null }>('/me/profile'))
       .then((result) => {
@@ -51,19 +66,61 @@ export default function ProfilePage() {
       );
       return;
     }
+    const sid = ownSession.current;
+    if (!editSaved && !sid) {
+      setError('请先进入一场活动');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
       await login();
       if (editSaved) await request('/me/profile', 'PUT', parsed.data);
       else
-        await request(`/sessions/${currentSessionId()}/join`, 'POST', {
+        await request(`/sessions/${sid}/join`, 'POST', {
           profile: parsed.data,
           saveProfile: save,
         });
-      await Taro.switchTab({
-        url: editSaved ? '/pages/me/index' : '/pages/session/people',
-      });
+      if (!editSaved) {
+        const [session, entries] = await Promise.all([
+          request<CloudSession>(`/sessions/${sid}`),
+          request<PersonalEntry[]>('/me/entries'),
+        ]);
+        const candidates = entries.filter(
+          (e) => !e.sessionId && e.title.trim() === session.title.trim(),
+        );
+        if (
+          candidates.length &&
+          (
+            await Taro.showModal({
+              title: '你以前记录过可能相同的活动',
+              content: '要关联到这场吗？不会合并或公开你的私人心得。',
+            })
+          ).confirm
+        ) {
+          const index =
+            candidates.length === 1
+              ? 0
+              : (
+                  await Taro.showActionSheet({
+                    itemList: candidates
+                      .slice(0, 6)
+                      .map((e) => e.title + ' · ' + e.occurredAt.slice(0, 10)),
+                  })
+                ).tapIndex;
+          const entry = candidates[index]!;
+          await request(`/me/entries/${entry.id}`, 'PATCH', {
+            version: entry.version,
+            sessionId: sid,
+          });
+        }
+      }
+
+      if (editSaved) await Taro.switchTab({ url: '/pages/me/index' });
+      else
+        await Taro.redirectTo({
+          url: '/pages/session/index?sid=' + sid,
+        });
     } catch (e) {
       setError(message(e));
     } finally {

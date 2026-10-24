@@ -1,9 +1,13 @@
+import { LocalMediaNotice } from '../../src/local-media-notice';
+import { importAudio } from '../../src/audio-import';
+import { cloudSessionId, cloudRequest } from '../../src/cloud';
 import { useEffect, useState } from 'react';
 import { Alert, Text, TextInput } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Page, Heading, Card, Action, styles } from '../../src/ui';
 import {
+  getDatabase,
   recordingsForSession,
   listSessions,
   renameSession,
@@ -31,12 +35,15 @@ function Playback({
     <Card>
       <Text style={styles.label}>{formatDuration(recording.duration_ms)}</Text>
       <Text style={styles.caption}>
-        {recording.status === 'interrupted'
-          ? '此段录音曾中断，文件可能不完整，请试听确认。'
-          : '保存在本机'}
+        {recording.import_state === 'failed'
+          ? '这段导入未完成，请删除此片段后重新选择原文件。'
+          : recording.status === 'interrupted'
+            ? '此段录音曾中断，文件可能不完整，请试听确认。'
+            : '保存在本机'}
       </Text>
       <Action
         secondary
+        disabled={recording.import_state === 'failed'}
         label={status.playing ? '暂停播放' : '试听录音'}
         onPress={() => {
           if (status.playing) player.pause();
@@ -97,12 +104,36 @@ function Playback({
   );
 }
 export default function SessionDetail() {
+  const [organizer, setOrganizer] = useState(false);
+  const [shared, setShared] = useState(false);
+  const [importing, setImporting] = useState(false);
   const { id } = useLocalSearchParams<{ id: string }>();
   const [title, setTitle] = useState('');
   const [recordings, setRecordings] = useState<LocalRecording[]>([]);
   const [error, setError] = useState('');
   useEffect(() => {
     let live = true;
+    setOrganizer(false);
+    setShared(false);
+    void getDatabase()
+      .then((db) =>
+        db.getFirstAsync<{ cloud_id: string | null }>(
+          'SELECT cloud_id FROM sessions WHERE id=?',
+          id,
+        ),
+      )
+      .then(async (local) => {
+        if (!local) return { isOrganizer: false };
+        if (!local.cloud_id) return { isOrganizer: true };
+        if (live) setShared(true);
+        return cloudRequest<{ isOrganizer: boolean }>(
+          `/sessions/${await cloudSessionId(id)}`,
+        );
+      })
+      .then((s) => {
+        if (live) setOrganizer(s.isOrganizer);
+      })
+      .catch(() => {});
     void Promise.all([listSessions(), recordingsForSession(id)])
       .then(([sessions, rows]) => {
         if (live) {
@@ -139,6 +170,30 @@ export default function SessionDetail() {
             .catch(() => setError('名称保存失败，请重试'))
         }
       />
+      <Action
+        secondary
+        label="我的心得和照片"
+        onPress={() => router.push({ pathname: '/entry', params: { id } })}
+      />
+      <Action
+        secondary
+        label={importing ? '正在导入…' : '导入录音'}
+        disabled={importing}
+        onPress={() => {
+          setImporting(true);
+          void importAudio(id)
+            .then(async () => setRecordings(await recordingsForSession(id)))
+            .catch((e) => setError(e.message))
+            .finally(() => setImporting(false));
+        }}
+      />
+      <Action
+        secondary
+        label="关联到已有活动"
+        onPress={() =>
+          router.push({ pathname: '/activity-link', params: { id } })
+        }
+      />
       {recordings.map((recording) => (
         <Playback
           key={recording.id}
@@ -150,11 +205,22 @@ export default function SessionDetail() {
         label="AI 整理本场"
         onPress={() => router.push({ pathname: '/analysis', params: { id } })}
       />
-      <Action
-        secondary
-        label="让大家加入"
-        onPress={() => router.push({ pathname: '/join', params: { id } })}
-      />
+      {shared && (
+        <Action
+          secondary
+          label="这场回顾（本场共享）"
+          onPress={() =>
+            router.push({ pathname: '/shared-recap', params: { id } })
+          }
+        />
+      )}
+      {organizer && (
+        <Action
+          secondary
+          label="让大家加入"
+          onPress={() => router.push({ pathname: '/join', params: { id } })}
+        />
+      )}
       <Text style={styles.body}>
         配置阿里云百炼后，可以进行 AI 整理和搜索。
       </Text>
@@ -171,7 +237,7 @@ export default function SessionDetail() {
         onPress={() =>
           Alert.alert(
             '删除这次记录？',
-            '本机录音与私人整理结果将一并删除，无法恢复。',
+            '本机录音、心得、照片与私人整理结果将删除，无法恢复。已经同步的云端私人副本需在小程序单独删除。',
             [
               { text: '取消', style: 'cancel' },
               {
@@ -188,6 +254,7 @@ export default function SessionDetail() {
           )
         }
       />
+      <LocalMediaNotice />
     </Page>
   );
 }

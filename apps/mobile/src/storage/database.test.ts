@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import { beforeAll, afterAll, expect, it, vi } from 'vitest';
-import { activeAIJobs } from '../activity';
+import { activeAIJobs, activeAudioImports } from '../activity';
 const state = vi.hoisted(() => ({
   removed: [] as string[],
   failDelete: false,
@@ -228,4 +228,18 @@ it('删除录音同时清理同 ID 的旧缓存副本，不触碰其他录音', 
   expect(state.removed).toContain('file:///cache/Audio/cache-deletenull');
   expect(state.removed).toContain('file:///documents/Audio/cache-delete.3gp');
   state.cacheFiles = [];
+});
+
+it('导入过程中不能删除同场录音或整场，本机数据保持不变', async () => {
+  seed('import-lock');
+  activeAudioImports.add('import-lock');
+  try {
+    await expect(deleteRecording('import-lock')).rejects.toThrow('导入');
+    await expect(deleteSession('import-lock')).rejects.toThrow('导入');
+    expect(
+      sqlite.prepare("SELECT id FROM recordings WHERE id='import-lock'").get(),
+    ).toBeTruthy();
+  } finally {
+    activeAudioImports.delete('import-lock');
+  }
 });

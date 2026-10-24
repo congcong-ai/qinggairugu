@@ -50,7 +50,7 @@ describe('公网产品问答与抓取产物', () => {
       expect(markdown).toContain(q.answer);
       expect(readme).toContain(q.answer);
     }
-    expect(markdown).toContain('只有负责录音与整理的活动组织者需要下载');
+    expect(markdown).toContain('录音和图片只保存在 App 所在手机本地');
     expect(markdown).toContain('手机会把录音临时发送阿里云百炼处理');
   });
   it('小程序未上线时只有明确标注的占位，不生成可误扫的二维码', () => {

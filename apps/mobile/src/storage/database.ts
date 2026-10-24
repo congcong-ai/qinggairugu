@@ -1,4 +1,5 @@
-import { activeAIJobs } from '../activity';
+import { recoverAudioImports } from './import-recovery';
+import { activeAIJobs, activeAudioImports } from '../activity';
 import {
   openDatabaseAsync,
   bundledExtensions,
@@ -7,10 +8,12 @@ import {
 import { File, Directory, Paths } from 'expo-file-system';
 import { migrate } from './migrations';
 export interface LocalSession {
+  cloud_id: string | null;
   id: string;
   title: string;
   state: string;
   created_at: string;
+  occurred_at?: string;
   duration_ms: number;
 }
 export interface LocalRecording {
@@ -19,6 +22,8 @@ export interface LocalRecording {
   uri: string;
   duration_ms: number;
   status: string;
+  source?: string;
+  import_state?: string;
 }
 let database: Promise<SQLiteDatabase> | undefined;
 export let nativeVectorAvailable = false;
@@ -41,6 +46,7 @@ export function getDatabase() {
     await db.execAsync(
       "UPDATE recordings SET status = 'interrupted' WHERE status IN ('recording','paused'); UPDATE sessions SET state = 'interrupted' WHERE state IN ('recording','paused');",
     );
+    await recoverAudioImports(db, (uri) => new File(uri));
     return db;
   })().catch((error) => {
     database = undefined;
@@ -51,7 +57,7 @@ export function getDatabase() {
 export async function listSessions() {
   const db = await getDatabase();
   return db.getAllAsync<LocalSession>(
-    'SELECT s.*, COALESCE(SUM(r.duration_ms),0) AS duration_ms FROM sessions s LEFT JOIN recordings r ON r.session_id = s.id GROUP BY s.id ORDER BY s.created_at DESC',
+    'SELECT s.*, COALESCE(e.occurred_at,s.starts_at,s.created_at) AS occurred_at, COALESCE(SUM(r.duration_ms),0) AS duration_ms FROM sessions s LEFT JOIN personal_entries e ON e.id=s.id LEFT JOIN recordings r ON r.session_id = s.id GROUP BY s.id ORDER BY occurred_at DESC',
   );
 }
 export async function recordingsForSession(id: string) {
@@ -83,6 +89,7 @@ function removeCachedCopies(id: string) {
       entry.delete();
 }
 export async function deleteSession(id: string) {
+  if (activeAudioImports.has(id)) throw new Error('请等待录音导入完成');
   if (activeAIJobs.has(id)) throw new Error('请等待 AI 整理完成');
   const db = await getDatabase();
   const active = await db.getFirstAsync(
@@ -90,6 +97,14 @@ export async function deleteSession(id: string) {
     id,
   );
   if (active) throw new Error('请先完成当前录音');
+  const photos = await db.getAllAsync<{ uri: string }>(
+    'SELECT uri FROM personal_photos WHERE session_id=?',
+    id,
+  );
+  for (const photo of photos) {
+    const file = new File(photo.uri);
+    if (file.exists) file.delete();
+  }
   // 先删文件再删数据库：文件删除失败时保留索引供重试。
   for (const recording of await recordingsForSession(id)) {
     removeCachedCopies(recording.id);
@@ -138,6 +153,8 @@ export async function deleteRecording(id: string) {
     id,
   );
   if (!row) return;
+  if (activeAudioImports.has(row.session_id))
+    throw new Error('请等待录音导入完成');
   if (activeAIJobs.has(row.session_id)) throw new Error('请等待 AI 整理完成');
   if (
     await db.getFirstAsync(

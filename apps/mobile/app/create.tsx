@@ -64,7 +64,7 @@ export default function Create() {
   }
   return (
     <Page>
-      <Heading title="创建一场" subtitle="先约好，再慢慢聊。" />
+      <Heading title="发起活动" subtitle="先约好，再慢慢聊。" />
       <Card>
         <TextInput
           accessibilityLabel="这场叫什么"

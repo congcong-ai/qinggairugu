@@ -28,7 +28,7 @@ export default function Home() {
   );
   return (
     <Page>
-      <Heading title="倾盖如故" subtitle="把每一次见面留下来。" />
+      <Heading title="倾盖如故" subtitle="每次相聚，都算数" />
       <View
         style={{
           backgroundColor: colors.soft,
@@ -53,18 +53,23 @@ export default function Home() {
         <Text style={styles.body}>
           从一杯咖啡到一场分享，{'\n'}留住那些值得记住的声音。
         </Text>
-        <Action label="开始记录" onPress={() => router.push('/recording')} />
+        <Action label="开始录音" onPress={() => router.push('/recording')} />
         <Text style={styles.caption}>无需注册 · 录音保存在你的设备</Text>
       </View>
       <Action
         secondary
-        label="创建一场"
-        onPress={() => router.push('/create')}
+        label="记一次活动"
+        onPress={() => router.push('/entry')}
       />
       <Action
         secondary
         label="问倾盖如故"
         onPress={() => router.push('/search')}
+      />
+      <Action
+        secondary
+        label="发起活动"
+        onPress={() => router.push('/create')}
       />
       <Heading title="最近" />
       {error && <Text style={styles.body}>{error}</Text>}

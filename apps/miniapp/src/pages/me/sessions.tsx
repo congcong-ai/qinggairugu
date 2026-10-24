@@ -35,7 +35,7 @@ export default function Sessions() {
           <Button
             onClick={() => {
               setSessionId(row.id);
-              void Taro.switchTab({ url: '/pages/session/index' });
+              void Taro.navigateTo({ url: '/pages/session/index' });
             }}
           >
             再看看这场

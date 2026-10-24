@@ -230,3 +230,45 @@ export async function checkOnlineAndroidRelease(manifest, request = fetch) {
     );
   }
 }
+
+/** ZIP 对齐不代表 ELF 对齐；正式构建必须逐个验证 64 位原生库。 */
+export function assert16KBElf(buffer, name = '原生库') {
+  const fail = (message) => {
+    throw new AndroidReleaseError(`${name}：${message}`);
+  };
+  if (
+    buffer.length < 64 ||
+    buffer.readUInt32LE(0) !== 0x464c457f ||
+    buffer[4] !== 2 ||
+    buffer[5] !== 1
+  )
+    fail('不是可验证的 64 位小端 ELF');
+  const offset = buffer.readBigUInt64LE(32);
+  const size = buffer.readUInt16LE(54),
+    count = buffer.readUInt16LE(56);
+  if (
+    offset > BigInt(Number.MAX_SAFE_INTEGER) ||
+    Number(offset) < 64 ||
+    size < 56 ||
+    !count ||
+    Number(offset) + size * count > buffer.length
+  )
+    fail('ELF 段表不完整');
+  let segments = 0;
+  for (let index = 0; index < count; index++) {
+    const start = Number(offset) + index * size;
+    if (buffer.readUInt32LE(start) !== 1) continue;
+    segments++;
+    const alignment = buffer.readBigUInt64LE(start + 48);
+    const fileOffset = buffer.readBigUInt64LE(start + 8),
+      address = buffer.readBigUInt64LE(start + 16);
+    if (
+      alignment < 16384n ||
+      (alignment & (alignment - 1n)) !== 0n ||
+      fileOffset % 16384n !== address % 16384n
+    )
+      fail('LOAD 段未按 16 KB 对齐，请更新或重新编译该库');
+  }
+  if (!segments) fail('缺少 LOAD 段');
+  return segments;
+}

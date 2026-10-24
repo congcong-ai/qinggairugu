@@ -13,6 +13,7 @@ export async function request<T>(
   path: string,
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET',
   data?: unknown,
+  retry = true,
 ): Promise<T> {
   const token = Taro.getStorageSync<string>(tokenKey);
   const response = await Taro.request<{ error?: string }>({
@@ -21,7 +22,13 @@ export async function request<T>(
     data,
     header: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
   });
-  if (response.statusCode === 401) Taro.removeStorageSync(tokenKey);
+  if (response.statusCode === 401) {
+    Taro.removeStorageSync(tokenKey);
+    if (retry && path !== '/auth/wechat') {
+      await login();
+      return request<T>(path, method, data, false);
+    }
+  }
   if (response.statusCode >= 400)
     throw new Error(response.data.error || '暂时无法连接，请稍后重试');
   return response.data as T;

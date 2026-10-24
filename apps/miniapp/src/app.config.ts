@@ -1,5 +1,10 @@
 export default defineAppConfig({
   pages: [
+    'pages/activity/index',
+    'pages/activity/edit',
+    'pages/activity/create',
+    'pages/activity/results',
+    'pages/binding/index',
     'pages/session/index',
     'pages/profile/edit',
     'pages/session/people',
@@ -18,9 +23,7 @@ export default defineAppConfig({
     selectedColor: '#426B4E',
     backgroundColor: '#F7F4EE',
     list: [
-      { pagePath: 'pages/session/index', text: '这场' },
-      { pagePath: 'pages/session/people', text: '都有谁' },
-      { pagePath: 'pages/session/recap', text: '回顾' },
+      { pagePath: 'pages/activity/index', text: '我的活动' },
       { pagePath: 'pages/me/index', text: '我的' },
     ],
   },

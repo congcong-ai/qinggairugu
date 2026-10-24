@@ -1,3 +1,4 @@
+import { randomUUID } from 'expo-crypto';
 import { useEffect, useState } from 'react';
 import { Text, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -120,6 +121,11 @@ export default function Analysis() {
           'DELETE FROM speaker_person_links WHERE speaker_id=?',
           matching,
         );
+      await db.runAsync(
+        'UPDATE sessions SET source_version=? WHERE id=?',
+        randomUUID(),
+        id,
+      );
       setMatching(null);
       await load();
     } catch {
@@ -129,6 +135,13 @@ export default function Analysis() {
 
   return (
     <Page>
+      <Action
+        secondary
+        label="同步到我的小程序"
+        onPress={() =>
+          router.push({ pathname: '/private-sync', params: { id } })
+        }
+      />
       <Heading title="这场聊了什么" subtitle="私人整理，仅保存在本机。" />
       {source && (
         <Card>
