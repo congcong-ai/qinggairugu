@@ -20,10 +20,16 @@ node -p 'process.versions.modules' > "$release/.node-abi"
 if [[ -n $old && -f $old/.dependencies-ready ]] && cmp -s "$old/pnpm-lock.yaml" "$release/pnpm-lock.yaml" && cmp -s "$old/.node-abi" "$release/.node-abi"; then
   while IFS= read -r -d '' modules; do
     relative=${modules#"$old/"}; mkdir -p "$release/$(dirname "$relative")"
-    cp -a -- "$modules" "$release/$relative"
+    cp -al -- "$modules" "$release/$relative"
   done < <(find "$old" -name node_modules -type d -prune -print0)
 else
-  (cd "$release" && pnpm --filter @pengtou/api... install --prod --no-optional --frozen-lockfile)
+  (
+    flock -x 8
+    umask 022
+    cd "$release"
+    pnpm --filter @pengtou/api... install --prod --no-optional --frozen-lockfile \
+      --store-dir /root/.local/share/pnpm/store --package-import-method=hardlink
+  ) 8>/run/lock/xixisys-pnpm-store.lock
 fi
 node --input-type=module - "$release" <<'JS'
 import { createRequire } from 'node:module';
