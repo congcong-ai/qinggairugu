@@ -1,73 +1,44 @@
-import { AppGuide } from '../../components/app-guide';
 import { View, Text, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import { login, request, message } from '../../lib/api';
 export default function Me() {
-  async function remove() {
-    const result = await Taro.showModal({
-      title: '删除保存资料？',
-      content: '以后不会再自动填入。已加入的每场资料快照会保留。',
-    });
-    if (!result.confirm) return;
-    try {
-      await login();
-      await request('/me/profile', 'DELETE');
-      await Taro.showToast({ title: '保存资料已删除' });
-    } catch (e) {
-      await Taro.showToast({ title: message(e), icon: 'none' });
-    }
-  }
+  const rows = [
+    ['我的整理结果', '仅自己可见', '/pages/activity/results'],
+    ['关联我的 App', '', '/pages/binding/index'],
+    ['隐私与数据', '', '/pages/me/privacy'],
+    ['关于倾盖如故', '下载 App', '/pages/me/about'],
+  ];
   return (
-    <View className="page">
+    <View className="page me-page">
       <Text className="title">我的</Text>
-      <View className="hero">
-        <Text className="subtitle">认识一下，让下一次见面更轻松。</Text>
-        <Button
-          className="button"
-          onClick={() =>
-            Taro.navigateTo({ url: '/pages/profile/edit?mode=saved' })
-          }
-        >
-          我的「关于我」
-        </Button>
-        <Button
-          onClick={() => Taro.switchTab({ url: '/pages/activity/index' })}
-        >
-          我的活动
-        </Button>
+      <Button
+        className="row-button profile-entry"
+        onClick={() =>
+          Taro.navigateTo({ url: '/pages/profile/edit?mode=saved' })
+        }
+      >
+        <View className="profile-avatar">我</View>
+        <View className="row-content">
+          <Text className="profile-title">我的「关于我」</Text>
+          <Text className="hint">让下一次见面更轻松</Text>
+        </View>
+        <Text className="chevron">›</Text>
+      </Button>
+      <View className="list-group">
+        {rows.map(([title, note, url]) => (
+          <Button
+            className="row-button settings-row"
+            key={url}
+            onClick={() => Taro.navigateTo({ url: url! })}
+          >
+            <Text>{title}</Text>
+            <View className="row-trailing">
+              <Text className="hint">{note}</Text>
+              <Text className="chevron">›</Text>
+            </View>
+          </Button>
+        ))}
       </View>
-      <Button onClick={() => Taro.navigateTo({ url: '/pages/binding/index' })}>
-        关联我的 App
-      </Button>
-      <Button
-        onClick={() => Taro.navigateTo({ url: '/pages/activity/results' })}
-      >
-        我的整理结果（只有我可见）
-      </Button>
-      <Button
-        onClick={() => {
-          void Taro.showModal({
-            title: '删除我的云端资料？',
-            content:
-              '删除私人文字心得、同步 AI、参与资料和关联。本人发起活动将归档并撤回回顾；手机本地照片和录音保留，需另行删除。此操作不可恢复。',
-          })
-            .then(async (r) => {
-              if (r.confirm) {
-                await login();
-                await request('/me/data', 'DELETE');
-                await Taro.showToast({ title: '云端资料已删除' });
-              }
-            })
-            .catch((e) => Taro.showToast({ title: message(e), icon: 'none' }));
-        }}
-      >
-        删除我的云端资料
-      </Button>
-      <AppGuide />
-      <Button onClick={() => void remove()}>删除保存的资料</Button>
-      <Text className="hint">
-        保存资料用于下次参加时复用，不代表加入公开社交网络。
-      </Text>
+      <Text className="brand-footer">倾盖如故 · 把每一次见面留下来</Text>
     </View>
   );
 }

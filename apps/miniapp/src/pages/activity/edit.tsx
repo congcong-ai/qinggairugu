@@ -1,3 +1,4 @@
+import { StarterCode } from '../../components/starter-code';
 import { localDateInput, dateInputToISOString } from '@pengtou/shared';
 import { useState } from 'react';
 import { View, Text, Input, Textarea, Button } from '@tarojs/components';
@@ -11,6 +12,7 @@ const uuid = () =>
     return (c === 'x' ? r : (r & 3) | 8).toString(16);
   });
 export default function Entry() {
+  const [role, setRole] = useState('');
   const [id, setId] = useState('');
   const [version, setVersion] = useState(0);
   const [sid, setSid] = useState<string | null>(null);
@@ -23,6 +25,7 @@ export default function Entry() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   useLoad((options) => {
+    setRole(options.role || '');
     const eid = options.id || uuid();
     setId(eid);
     setSid(options.sid || null);
@@ -105,7 +108,11 @@ export default function Entry() {
   }
   return (
     <View className="page">
-      <Text className="eyebrow">我的记录 · 只有我可见</Text>
+      <Text className="eyebrow">
+        {role === 'participant'
+          ? '我是参与者 · 只有我可见'
+          : '我的记录 · 只有我可见'}
+      </Text>
       <Text className="title">记住这次相聚</Text>
       <View className="card">
         <Input
@@ -152,9 +159,14 @@ export default function Entry() {
       <Button className="button" disabled={busy} onClick={() => void save()}>
         保存这次记忆
       </Button>
-      <AppGuide />
+      {role === 'participant' ? (
+        <StarterCode title={title} date={date} />
+      ) : (
+        <AppGuide />
+      )}
       {sid && (
         <Button
+          className="row-button"
           disabled={busy}
           onClick={() => {
             setSid(null);

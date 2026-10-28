@@ -44,7 +44,10 @@ export default function Join() {
   }, [id]);
   return (
     <Page>
-      <Heading title="让大家加入" subtitle="见过的人，也值得留下来。" />
+      <Heading
+        title="让大家加入"
+        subtitle="我是发起人 · 请大家用微信扫码加入"
+      />
       <Card>
         {qr ? (
           <>

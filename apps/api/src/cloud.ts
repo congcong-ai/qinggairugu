@@ -1,3 +1,4 @@
+import { resolveWechatIdentity, IdentityConflict } from './wechat-identity';
 import {
   sessionAccess,
   activitySessions,
@@ -29,6 +30,9 @@ interface Config {
   allowDevAuth: boolean;
   wechatAppId?: string;
   wechatAppSecret?: string;
+  wechatOpenPlatformId?: string;
+  wechatMobileAppId?: string;
+  wechatMobileAppSecret?: string;
   wechatMiniappEnv?: MiniappEnv;
 }
 export function createCloudApp(db: Database, config: Config) {
@@ -54,7 +58,19 @@ export function createCloudApp(db: Database, config: Config) {
     const deviceId = c.req.header('x-installation-id');
     const secret = c.req.header('x-installation-secret');
     const token = c.req.header('authorization')?.replace(/^Bearer /, '');
-    if (
+    if (token && token.length <= 256) {
+      const [found] = await db
+        .select()
+        .from(schema.tokens)
+        .where(
+          and(
+            eq(schema.tokens.hash, hash(token)),
+            gt(schema.tokens.expiresAt, new Date()),
+          ),
+        );
+      if (found) actor = { kind: 'user', id: found.userId };
+    } else if (
+      !c.req.header('authorization') &&
       deviceId &&
       secret &&
       z.uuid().safeParse(deviceId).success &&
@@ -72,17 +88,6 @@ export function createCloudApp(db: Database, config: Config) {
         )
       )
         actor = { kind: 'device', id: device.id };
-    } else if (token && token.length <= 256) {
-      const [found] = await db
-        .select()
-        .from(schema.tokens)
-        .where(
-          and(
-            eq(schema.tokens.hash, hash(token)),
-            gt(schema.tokens.expiresAt, new Date()),
-          ),
-        );
-      if (found) actor = { kind: 'user', id: found.userId };
     }
     c.set('actor', actor);
     await next();
@@ -105,48 +110,82 @@ export function createCloudApp(db: Database, config: Config) {
       return c.json({ error: '设备身份验证失败' }, 403);
     return c.json({ id: input.id }, 201);
   });
-  app.post('/auth/wechat', async (c) => {
-    const input = z
-      .object({ code: z.string().min(1).max(256) })
-      .strict()
-      .parse(await c.req.json());
-    let openid: string;
-    if (config.allowDevAuth && input.code.startsWith('dev:'))
-      openid = input.code;
-    else {
-      if (!config.wechatAppId || !config.wechatAppSecret)
-        return c.json({ error: '微信身份服务尚未配置' }, 503);
-      const url = new URL('https://api.weixin.qq.com/sns/jscode2session');
-      url.search = new URLSearchParams({
-        appid: config.wechatAppId,
-        secret: config.wechatAppSecret,
-        js_code: input.code,
-        grant_type: 'authorization_code',
-      }).toString();
-      const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
-      const result = z
-        .object({
-          openid: z.string().optional(),
-          errcode: z.number().optional(),
-        })
-        .parse(await response.json());
-      if (!response.ok || result.errcode || !result.openid)
-        return c.json({ error: '微信登录失败，请重试' }, 401);
-      openid = result.openid;
-    }
-    const [user] = await db
-      .insert(schema.users)
-      .values({ id: randomUUID(), openid })
-      .onConflictDoUpdate({ target: schema.users.openid, set: { openid } })
-      .returning();
-    if (!user) throw new Error('用户创建失败');
-    const token = randomBytes(32).toString('hex');
-    await db.insert(schema.tokens).values({
-      hash: hash(token),
-      userId: user.id,
-      expiresAt: new Date(Date.now() + 7 * 86400000),
+  for (const loginPath of ['/auth/wechat', '/auth/wechat/mobile']) {
+    app.post(loginPath, async (c) => {
+      const mobile = loginPath.endsWith('/mobile');
+      const appId = mobile ? config.wechatMobileAppId : config.wechatAppId;
+      const appSecret = mobile
+        ? config.wechatMobileAppSecret
+        : config.wechatAppSecret;
+      const input = z
+        .object({ code: z.string().min(1).max(256) })
+        .strict()
+        .parse(await c.req.json());
+      let openid: string;
+      let unionid: string | undefined;
+      if (!mobile && config.allowDevAuth && input.code.startsWith('dev:'))
+        openid = input.code;
+      else {
+        if (!appId || !appSecret)
+          return c.json({ error: '微信身份服务尚未配置' }, 503);
+        const url = new URL(
+          mobile
+            ? 'https://api.weixin.qq.com/sns/oauth2/access_token'
+            : 'https://api.weixin.qq.com/sns/jscode2session',
+        );
+        url.search = new URLSearchParams({
+          appid: appId,
+          secret: appSecret,
+          ...(mobile ? { code: input.code } : { js_code: input.code }),
+          grant_type: 'authorization_code',
+        }).toString();
+        const response = await fetch(url, {
+          signal: AbortSignal.timeout(10000),
+        });
+        const result = z
+          .object({
+            openid: z.string().optional(),
+            unionid: z.string().min(1).optional(),
+            errcode: z.number().optional(),
+          })
+          .parse(await response.json());
+        if (!response.ok || result.errcode || !result.openid)
+          return c.json({ error: '微信登录失败，请重试' }, 401);
+        openid = result.openid;
+        unionid = result.unionid;
+      }
+      let userId: string;
+      try {
+        userId = await resolveWechatIdentity(db, {
+          appId:
+            !mobile && config.allowDevAuth && input.code.startsWith('dev:')
+              ? 'development-miniapp'
+              : appId!,
+          openid,
+          unionid,
+          platformId: config.wechatOpenPlatformId,
+          legacyMiniapp: !mobile,
+        });
+      } catch (error) {
+        if (error instanceof IdentityConflict)
+          return c.json({ error: error.message }, 409);
+        throw error;
+      }
+      const token = randomBytes(32).toString('hex');
+      await db.insert(schema.tokens).values({
+        hash: hash(token),
+        userId,
+        expiresAt: new Date(Date.now() + 7 * 86400000),
+      });
+      return c.json({ token, userId });
     });
-    return c.json({ token, userId: user.id });
+  }
+  app.post('/auth/logout', async (c) => {
+    if (c.get('actor')?.kind !== 'user')
+      return c.json({ error: '请先登录' }, 401);
+    const token = c.req.header('authorization')!.replace(/^Bearer /, '');
+    await db.delete(schema.tokens).where(eq(schema.tokens.hash, hash(token)));
+    return c.json({ loggedOut: true });
   });
   app.post('/sessions', async (c) => {
     const actor = c.get('actor');
@@ -385,6 +424,113 @@ export function createCloudApp(db: Database, config: Config) {
         config.wechatMiniappEnv,
       ),
     );
+  });
+  app.post('/activity-starters', async (c) => {
+    const actor = c.get('actor');
+    if (!actor) return c.json({ error: '请先建立身份' }, 401);
+    const input = createSessionSchema
+      .pick({ id: true, title: true, startsAt: true })
+      .extend({ profile: profileSchema })
+      .strict()
+      .parse(await c.req.json());
+    const creatorUserId = await userIdFor(db, actor);
+    if (!creatorUserId)
+      return c.json({ error: '请先关联本人小程序，以便自动加入活动' }, 401);
+    const creatorActor = actor.kind + ':' + actor.id;
+    await db
+      .insert(schema.activityStarters)
+      .values({
+        id: input.id,
+        creatorActor,
+        creatorUserId,
+        participantProfile: input.profile,
+        title: input.title,
+        startsAt: input.startsAt ? new Date(input.startsAt) : null,
+        sessionId: randomUUID(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      })
+      .onConflictDoNothing();
+    const [row] = await db
+      .select()
+      .from(schema.activityStarters)
+      .where(eq(schema.activityStarters.id, input.id));
+    if (!row || row.creatorActor !== creatorActor)
+      return c.json({ error: '不能使用这个发起码' }, 403);
+    if (row.expiresAt <= new Date())
+      return c.json({ error: '发起码已过期，请重新生成' }, 410);
+    return c.json(
+      await sessionQr(
+        row.id,
+        config.wechatAppId,
+        config.wechatAppSecret,
+        config.wechatMiniappEnv,
+        'pages/activity/claim',
+      ),
+    );
+  });
+  app.get('/activity-starters/:id', async (c) => {
+    const actor = c.get('actor');
+    if (!actor) return c.json({ error: '请先建立身份' }, 401);
+    const id = z.uuid().parse(c.req.param('id'));
+    const [row] = await db
+      .select()
+      .from(schema.activityStarters)
+      .where(eq(schema.activityStarters.id, id));
+    if (!row || row.creatorActor !== actor.kind + ':' + actor.id)
+      return c.json({ error: '不能查看此发起码' }, 403);
+    return c.json({
+      claimed: !!row.claimedUserId,
+      sessionId: row.claimedUserId ? row.sessionId : null,
+      expiresAt: row.expiresAt.toISOString(),
+    });
+  });
+  app.post('/activity-starters/:id/claim', async (c) => {
+    const actor = c.get('actor');
+    if (!actor || actor.kind !== 'user')
+      return c.json({ error: '请用组织者的微信扫码' }, 401);
+    const id = z.uuid().parse(c.req.param('id'));
+    const result = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .select()
+        .from(schema.activityStarters)
+        .where(eq(schema.activityStarters.id, id))
+        .for('update');
+      if (!row) return { error: '发起码不存在', status: 404 as const };
+      if (row.claimedUserId && row.claimedUserId !== actor.id)
+        return {
+          error: '这场已由另一位组织者发起，请向组织者索取加入码',
+          status: 409 as const,
+        };
+      if (row.claimedUserId) return { sessionId: row.sessionId };
+      if (row.expiresAt <= new Date())
+        return {
+          error: '发起码已过期，请参与者重新生成',
+          status: 410 as const,
+        };
+      await tx.insert(schema.sessions).values({
+        id: row.sessionId,
+        title: row.title,
+        startsAt: row.startsAt,
+        organizerUserId: actor.id,
+        participantVisibility: 'everyone',
+      });
+      await tx
+        .insert(schema.participants)
+        .values({
+          sessionId: row.sessionId,
+          userId: row.creatorUserId,
+          profile: row.participantProfile,
+        })
+        .onConflictDoNothing();
+      await tx
+        .update(schema.activityStarters)
+        .set({ claimedUserId: actor.id })
+        .where(eq(schema.activityStarters.id, id));
+      return { sessionId: row.sessionId };
+    });
+    if ('error' in result)
+      return c.json({ error: result.error }, result.status);
+    return c.json({ sessionId: result.sessionId });
   });
   mountMemoryRoutes(app, db);
   app.onError((error, c) => {

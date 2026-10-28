@@ -13,8 +13,16 @@ export default function Screen() {
           服务处理。
         </Text>
       </Card>
-      <Action label="关联我的小程序" onPress={() => router.push('/binding')} />
-      <Action label="AI 服务" onPress={() => router.push('/ai-settings')} />
+      <Action
+        secondary
+        label="关联我的小程序"
+        onPress={() => router.push('/binding')}
+      />
+      <Action
+        secondary
+        label="AI 服务"
+        onPress={() => router.push('/ai-settings')}
+      />
     </Page>
   );
 }

@@ -6,8 +6,9 @@ export async function sessionQr(
   appId?: string,
   secret?: string,
   miniappEnv: MiniappEnv = 'release',
+  page = 'pages/session/index',
 ) {
-  const miniappPath = `/pages/session/index?sid=${id}`;
+  const miniappPath = `/${page}?sid=${id}`;
   if (!appId || !secret)
     return {
       mode: 'debug',
@@ -36,7 +37,7 @@ export async function sessionQr(
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         scene: id.replaceAll('-', ''),
-        page: 'pages/session/index',
+        page,
         width: 600,
         check_path: miniappEnv === 'release',
         env_version: miniappEnv,

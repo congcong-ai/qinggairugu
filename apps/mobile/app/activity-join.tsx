@@ -48,7 +48,7 @@ export default function JoinActivity() {
     <Page>
       <Heading
         title="加入这场"
-        subtitle="也可以先用微信扫码，再回到我的活动。"
+        subtitle="我是参与者 · 也可以先用微信扫码加入"
       />
       <TextInput
         value={input}

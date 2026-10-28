@@ -55,7 +55,7 @@ export default function Binding() {
           onInput={(e) => setCode(e.detail.value)}
         />
         <Button
-          className="button"
+          className="row-button button"
           disabled={busy || !code.trim()}
           onClick={() => void claim()}
         >
@@ -67,6 +67,7 @@ export default function Binding() {
         <View key={b.id} className="card">
           <Text>设备 · {b.installationId.slice(-6)}</Text>
           <Button
+            className="row-button"
             onClick={() => {
               void Taro.showModal({
                 title: '解除关联？',

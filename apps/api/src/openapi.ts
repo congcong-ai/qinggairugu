@@ -67,6 +67,64 @@ export const openapi = {
     },
   },
   paths: {
+    '/auth/wechat/mobile': {
+      post: {
+        summary: '移动微信授权码换取产品账号令牌',
+        requestBody: jsonBody({
+          type: 'object',
+          additionalProperties: false,
+          required: ['code'],
+          properties: {
+            code: { type: 'string', minLength: 1, maxLength: 256 },
+          },
+        }),
+        responses: {
+          ...responses,
+          '409': { description: '已有账号冲突，禁止自动合并' },
+          '503': { description: '移动应用微信凭据未配置' },
+        },
+      },
+    },
+    '/auth/logout': {
+      post: { summary: '撤销当前登录令牌', security: user, responses },
+    },
+    '/activity-starters': {
+      post: {
+        summary:
+          '参与者生成给组织者扫的发起码，24小时有效；自动加入使用明确提供的关于我',
+        security: either,
+        requestBody: jsonBody(
+          z.toJSONSchema(
+            createSessionSchema
+              .pick({ id: true, title: true, startsAt: true })
+              .extend({ profile: profileSchema })
+              .strict(),
+          ),
+        ),
+        responses,
+      },
+    },
+    '/activity-starters/{id}': {
+      parameters: id,
+      get: {
+        summary: '仅分享者查询组织者是否已创建，不返回私人内容',
+        security: either,
+        responses,
+      },
+    },
+    '/activity-starters/{id}/claim': {
+      parameters: id,
+      post: {
+        summary:
+          '微信扫码直接创建活动并原子加入分享人，同人重试幂等，其他人409，过期410',
+        security: user,
+        responses: {
+          ...responses,
+          '409': { description: '已由另一组织者发起' },
+          '410': { description: '发起码过期' },
+        },
+      },
+    },
     '/me/activities': {
       get: {
         summary: '本人统一活动时间线，offset 分页，每页 50 条',

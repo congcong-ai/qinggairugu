@@ -7,7 +7,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "node scripts/dev.mjs 9001 pnpm exec turbo dev",
     "dev:mobile": "pnpm --filter @pengtou/mobile dev",
     "dev:miniapp": "pnpm --filter @pengtou/miniapp dev",
     "dev:api": "pnpm --filter @pengtou/api dev",

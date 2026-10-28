@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "name": "倾盖如故",
-  "version": "0.2.0",
-  "versionCode": 4,
+  "version": "0.2.1",
+  "versionCode": 5,
   "package": "com.xixisys.pengtou",
   "api": "https://qgrg.bebackpacker.com",
   "architectures": ["arm64-v8a", "armeabi-v7a"],
-  "filename": "qinggai-0.2.0-release.apk",
-  "bytes": 50709712,
-  "sha256": "1a158930f74b8532397b75cb80e30a70ca2a9cde81ec1cd1448b9f30a5472a7f",
-  "sourceHash": "358868846b0f8c87e9342ebe6f0483aeded319507926716bbbfc8c388e67c1aa",
-  "builtAt": "2026-10-22T23:25:07.203Z"
+  "filename": "qinggai-0.2.1-release.apk",
+  "bytes": 50600833,
+  "sha256": "12bb051444d3a57cf0125c8ec5e0612cae05321408d3d3817641ab8a4fc20f74",
+  "sourceHash": "31b10d2fd66e0a12d9308073424c7d0fa92acc9fd7973320e8c63e9bd65b79c7",
+  "builtAt": "2026-10-28T14:37:51.393Z"
 }

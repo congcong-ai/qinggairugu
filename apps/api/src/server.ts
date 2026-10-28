@@ -20,6 +20,9 @@ if (database)
         process.env.NODE_ENV !== 'production' &&
         process.env.ALLOW_DEV_AUTH === 'true',
       wechatAppId: process.env.WECHAT_APP_ID,
+      wechatOpenPlatformId: process.env.WECHAT_OPEN_PLATFORM_ID,
+      wechatMobileAppId: process.env.WECHAT_MOBILE_APP_ID,
+      wechatMobileAppSecret: process.env.WECHAT_MOBILE_APP_SECRET,
       wechatAppSecret: process.env.WECHAT_APP_SECRET,
       wechatMiniappEnv: z
         .enum(['release', 'trial', 'develop'])

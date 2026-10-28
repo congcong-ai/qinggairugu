@@ -9,6 +9,7 @@ export function AppGuide() {
         App；照片和录音只保存在使用 App 的那台手机，小程序和其他设备看不到。
       </Text>
       <Button
+        className="row-button"
         onClick={() => {
           void Taro.setClipboardData({ data: 'https://qgrg.bebackpacker.com' })
             .then(() =>

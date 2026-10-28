@@ -135,13 +135,15 @@ export default function ProfilePage() {
           <Text className="title">{profile.name}</Text>
           <Text className="subtitle">{profile.introduction}</Text>
           <Button
-            className="button"
+            className="row-button button"
             disabled={busy}
             onClick={() => void submit()}
           >
             就用这个加入
           </Button>
-          <Button onClick={() => setReuse(false)}>修改</Button>
+          <Button className="row-button" onClick={() => setReuse(false)}>
+            修改
+          </Button>
         </View>
       ) : (
         <View className="card">
@@ -188,7 +190,7 @@ export default function ProfilePage() {
       {error && <Text className="hint">{error}</Text>}
       {!reuse && (
         <Button
-          className="button"
+          className="row-button button"
           disabled={busy}
           onClick={() => void submit()}
         >

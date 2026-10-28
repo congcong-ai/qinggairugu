@@ -42,16 +42,11 @@ export default function Records() {
   return (
     <Page>
       <Heading title="我的活动" subtitle="我发起的、我参加的，和只属于我的。" />
-      <Action label="记一次活动" onPress={() => router.push('/entry')} />
+      <Action label="记录一场活动" onPress={() => router.push('/start')} />
       <Action
         secondary
-        label="发起活动"
-        onPress={() => router.push('/create')}
-      />
-      <Action
-        secondary
-        label="加入这场"
-        onPress={() => router.push('/activity-join')}
+        label="搜索我的记录"
+        onPress={() => router.push('/search')}
       />
       {!!error && <Text style={styles.caption}>{error}</Text>}
       {!cards.length && (

@@ -8,6 +8,8 @@ export async function migrateCloud(sql: Sql) {
     '0003_personal_entries.sql',
     '0004_private_ai.sql',
     '0005_recap_lifecycle.sql',
+    '0006_activity_starters.sql',
+    '0007_wechat_accounts.sql',
   ];
   await sql.begin(async (txn) => {
     await txn`SELECT pg_advisory_xact_lock(706568674)`;

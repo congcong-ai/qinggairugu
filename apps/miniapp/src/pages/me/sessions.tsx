@@ -33,6 +33,7 @@ export default function Sessions() {
             {row.recapPublishedAt ? '已发布回顾' : '等待回顾'}
           </Text>
           <Button
+            className="row-button"
             onClick={() => {
               setSessionId(row.id);
               void Taro.navigateTo({ url: '/pages/session/index' });

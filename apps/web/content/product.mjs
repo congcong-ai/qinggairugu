@@ -4,9 +4,9 @@ export const product = {
   origin: 'https://qgrg.bebackpacker.com',
   github: 'https://github.com/congcong-ai/qinggairugu',
   gitcode: 'https://gitcode.com/xixisys/qinggairugu-releases',
-  updatedAt: '2026-10-22',
+  updatedAt: '2026-10-28',
   description:
-    '倾盖如故是 MIT 开源、本地优先的个人线下活动记忆工具。一个 App 同时服务发起者和参与者；小程序可独立保存文字活动心得，也可扫码加入。录音和图片只保存在 App 所在手机本地；App 支持相册导入和拍照，小程序不提供选图或录音。卸载 App 或清除应用数据会丢失本机记录。v0.2 增量功能尚在验收，线上版本以正式发布为准。',
+    '倾盖如故是 MIT 开源、本地优先的个人线下活动记忆工具。一个 App 同时服务发起者和参与者；小程序可独立保存文字活动心得，也可扫码加入。录音和图片只保存在 App 所在手机本地；App 支持相册导入和拍照，小程序不提供选图或录音。卸载 App 或清除应用数据会丢失本机记录。当前源码支持发起／参加两种记录入口、文字心得与发起码；小程序版本以微信实际发布为准。',
   // 正式上线后填写仓库内的官方小程序码路径，例如 /assets/wechat-miniapp-code.webp。
   // 官网入口码不替代带具体场次标识的主办方活动码。
   miniappCode: null,
@@ -17,6 +17,12 @@ export const faqGroups = [
     id: 'organizers',
     title: '办活动与组织者',
     questions: [
+      {
+        id: 'record-and-starter',
+        question: '发起与参加有什么区别？发起码和加入码怎么用？',
+        answer:
+          '记录一场活动时，可以选择发起或参加。App 两种方式都直接开始本地录音；发起方自动加载本场加入码，参加方记录自己的内容。小程序用于文字心得。参与者还可生成给组织者扫描的发起码，组织者扫码后创建活动，并自动加入该参与者。发起码仅含活动名称、时间与明确展示的关于我，不含录音、心得或 AI 原文；24 小时过期，仅一位组织者可认领。此流程需要对应新版后端与小程序。',
+      },
       {
         id: 'what-is-qinggai',
         question:
@@ -41,7 +47,7 @@ export const faqGroups = [
         id: 'only-organizer-app',
         question: '是不是所有参与者都要下载 App？',
         answer:
-          '不需要。小程序可独立记录文字心得、发起活动或扫码加入，不要求手机号、邮箱或密码。任何人需要录音、导入音频或 AI 整理时，都可使用同一个 Android App，不必是组织者，也不切换角色。v0.2 新能力以验收和正式发布为准。',
+          '不需要。小程序可独立记录文字心得、发起活动或扫码加入，不要求手机号、邮箱或密码。任何人需要录音、导入音频或 AI 整理时，都可使用同一个 Android App，不必是组织者。记录时选择发起或参加，仅决定本次记录方式，不改变账号身份。小程序新能力以微信实际发布版本为准。',
       },
       {
         id: 'ai-notes',

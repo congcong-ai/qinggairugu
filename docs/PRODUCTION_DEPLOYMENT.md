@@ -4,9 +4,9 @@
 
 ## 架构与边界
 
-仅部署 Hono API：`https://qgrg.bebackpacker.com` → Nginx → `127.0.0.1:<审计端口>` → PostgreSQL。本项目路由直接为 `/sessions`、`/auth/wechat`、`/health` 等，不添加 `/api` 前缀。不部署 Web 前端、Android App 或微信小程序到服务器，不使用 Docker、Redis、对象存储或支付。
+仅部署 Hono API：`https://qgrg.bebackpacker.com` → Nginx → `127.0.0.1:<审计端口>` → PostgreSQL。本项目路由直接为 `/sessions`、`/auth/wechat`、`/health` 等，不添加 `/api` 前缀。官网静态产物随 API 一起部署；Android 安装包独立发布到 GitCode，微信小程序通过微信平台独立发布，不使用 Docker、Redis、对象存储或支付。
 
-原始录音、完整私人转写、私人 AI 分析、Embedding 和用户百炼 Key 不进入服务器。服务器只保存场次基本信息、参与者与确认发布的回顾。生产配置模板见 `deploy/production.env.example`；不得复制开发根 `.env` 到服务器。
+原始录音、图片、Embedding 和用户百炼 Key 不进入服务器。服务器保存场次基本信息、参与者、主动提交的文字心得与确认发布的回顾；安全绑定后允许用户独立授权同步本人私有 AI 文字，完整转写默认不选。生产配置模板见 `deploy/production.env.example`；不得复制开发根 `.env` 到服务器。
 
 ## 2026-10-19 安装前只读核查（历史记录）
 

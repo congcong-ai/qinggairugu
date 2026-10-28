@@ -17,7 +17,7 @@ export const installations = pgTable('installations', {
 });
 export const users = pgTable('users', {
   id: uuid().primaryKey(),
-  openid: text().notNull().unique(),
+  openid: text().unique(),
   profile: jsonb().$type<Profile>(),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
@@ -152,3 +152,45 @@ export const privacyAudit = pgTable('privacy_audit', {
     .defaultNow()
     .notNull(),
 });
+
+// 只保存发起所需基本信息，不关联私人记录或参与者资料。
+export const activityStarters = pgTable('activity_starters', {
+  id: uuid().primaryKey(),
+  creatorActor: text('creator_actor').notNull(),
+  creatorUserId: uuid('creator_user_id')
+    .notNull()
+    .references(() => users.id),
+  participantProfile: jsonb('participant_profile').$type<Profile>().notNull(),
+  title: text().notNull(),
+  startsAt: timestamp('starts_at', { withTimezone: true }),
+  sessionId: uuid('session_id').notNull().unique(),
+  claimedUserId: uuid('claimed_user_id').references(() => users.id),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// 微信身份以 AppID 为命名空间；UnionID 只接受微信服务端返回值。
+export const wechatIdentities = pgTable(
+  'wechat_identities',
+  {
+    appId: text('app_id').notNull(),
+    openid: text().notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+  },
+  (t) => [primaryKey({ columns: [t.appId, t.openid] })],
+);
+export const wechatUnions = pgTable(
+  'wechat_unions',
+  {
+    platformId: text('platform_id').notNull(),
+    unionid: text().notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+  },
+  (t) => [primaryKey({ columns: [t.platformId, t.unionid] })],
+);

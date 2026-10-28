@@ -1,3 +1,4 @@
+import { SessionNav } from '../../components/session-nav';
 import { sessionIdFromRoute } from '../../lib/session-route';
 import { useState, useRef } from 'react';
 import { View, Text } from '@tarojs/components';
@@ -36,6 +37,7 @@ export default function Recap() {
   });
   return (
     <View className="page">
+      <SessionNav active="recap" />
       <Text className="title">这场回顾</Text>
       <View className="card">
         <Text className="subtitle" style={{ whiteSpace: 'pre-wrap' }}>

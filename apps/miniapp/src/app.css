@@ -4,62 +4,362 @@ page {
   font-family: system-ui, sans-serif;
 }
 .page {
-  padding: 48rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 32rpx;
-}
-.eyebrow {
-  color: #426b4e;
-  font-size: 24rpx;
-  letter-spacing: 6rpx;
-}
-.title {
-  font-size: 56rpx;
-  font-weight: 650;
-  line-height: 1.4;
-}
-.subtitle {
-  font-size: 30rpx;
-  color: #72786c;
-  line-height: 1.9;
-}
-.card {
-  background: white;
-  border-radius: 40rpx;
-  padding: 40rpx;
+  padding: 32rpx;
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 24rpx;
 }
-.hero {
-  background: #e8ede1;
-  border-radius: 48rpx;
-  padding: 48rpx;
+.eyebrow {
+  color: #426b4e;
+  font-size: 23rpx;
+}
+.title {
+  font-size: 44rpx;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.subtitle {
+  font-size: 28rpx;
+  color: #72786c;
+  line-height: 1.7;
+}
+.card {
+  background: white;
+  border: 1rpx solid #e2e5db;
+  border-radius: 24rpx;
+  padding: 28rpx;
   display: flex;
   flex-direction: column;
-  gap: 32rpx;
+  gap: 20rpx;
+}
+.card .title {
+  font-size: 34rpx;
+}
+.hero {
+  background: #e8ede1;
+  border-radius: 28rpx;
+  padding: 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+.row-button {
+  margin: 0;
+  width: 100%;
+  min-height: 88rpx;
+  padding: 18rpx 24rpx;
+  background: #fff;
+  color: #426b4e;
+  font-size: 28rpx;
+  line-height: 1.6;
+  border-radius: 16rpx;
+  text-align: left;
+}
+.row-button::after {
+  border: 0;
 }
 .button {
   background: #426b4e;
   color: white;
-  border: 0;
-  border-radius: 28rpx;
-  font-size: 32rpx;
-  width: 100%;
-  padding: 8rpx 0;
+  text-align: center;
+  font-weight: 600;
 }
-.button::after {
-  border: 0;
+.row-button[disabled] {
+  opacity: 0.45;
 }
 .hint {
   font-size: 24rpx;
   color: #72786c;
-  line-height: 1.8;
+  line-height: 1.7;
 }
 .field {
-  padding: 24rpx 0;
+  padding: 22rpx 0;
   border-bottom: 1rpx solid #e2e5db;
   font-size: 30rpx;
   min-height: 60rpx;
+}
+.quick-actions {
+  display: flex;
+  gap: 16rpx;
+}
+.quick-actions .row-button {
+  flex: 1;
+  width: auto;
+  text-align: center;
+}
+.session-nav {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #fff;
+  display: flex;
+  border-bottom: 1rpx solid #e2e5db;
+  padding: 8rpx;
+  border-radius: 16rpx;
+}
+.session-nav .row-button {
+  flex: 1;
+  width: auto;
+  min-height: 76rpx;
+  padding: 16rpx 8rpx;
+  text-align: center;
+  font-size: 26rpx;
+}
+.session-nav .selected {
+  background: #e8ede1;
+  font-weight: 600;
+}
+
+/* 一级页面使用紧凑列表，说明与数据管理进入二级页。 */
+.home-page,
+.me-page {
+  gap: 28rpx;
+}
+.page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.heading-note {
+  display: block;
+  font-size: 24rpx;
+  color: #72786c;
+  margin-top: 8rpx;
+}
+.scan-action {
+  width: auto;
+  min-height: 76rpx;
+  padding: 16rpx 22rpx;
+  background: transparent;
+  font-size: 26rpx;
+}
+.entry-bar {
+  display: flex;
+  background: #e8ede1;
+  border-radius: 24rpx;
+  padding: 12rpx;
+  align-items: center;
+}
+.entry-main {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  background: transparent;
+  flex: 1;
+  padding: 16rpx;
+}
+.entry-symbol {
+  background: #426b4e;
+  color: white;
+  border-radius: 18rpx;
+  width: 76rpx;
+  line-height: 76rpx;
+  text-align: center;
+  font-size: 40rpx;
+}
+.entry-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #282f28;
+}
+.entry-note {
+  display: block;
+  font-size: 22rpx;
+  color: #72786c;
+  margin-top: 6rpx;
+}
+.entry-side {
+  width: auto;
+  background: transparent;
+  font-size: 26rpx;
+  padding: 18rpx;
+}
+.section-label {
+  font-size: 26rpx;
+  color: #72786c;
+  margin-top: 8rpx;
+}
+.list-group {
+  background: white;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+.activity-row,
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  border-radius: 0;
+  padding: 28rpx;
+  color: #282f28;
+  border-bottom: 1rpx solid #f0f0ec;
+}
+.activity-row:last-child,
+.settings-row:last-child {
+  border-bottom: 0;
+}
+.row-content {
+  flex: 1;
+  min-width: 0;
+}
+.row-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #282f28;
+  line-height: 1.5;
+}
+.activity-row .row-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 8rpx;
+}
+.date-tile {
+  width: 76rpx;
+  flex-shrink: 0;
+  text-align: center;
+  background: #f6f6f2;
+  border-radius: 14rpx;
+  padding: 8rpx 0;
+}
+.date-day {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.date-month {
+  display: block;
+  font-size: 20rpx;
+  color: #72786c;
+}
+.chevron {
+  font-size: 36rpx;
+  color: #a4aaa0;
+  font-weight: 400;
+}
+.settings-row {
+  min-height: 112rpx;
+  justify-content: space-between;
+  font-size: 29rpx;
+}
+.row-trailing {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+.profile-entry {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 36rpx 28rpx;
+  border-radius: 24rpx;
+}
+.profile-avatar {
+  width: 96rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  background: #e8ede1;
+  color: #426b4e;
+  font-size: 34rpx;
+  border-radius: 50%;
+}
+.profile-title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #282f28;
+  margin-bottom: 8rpx;
+}
+.brand-footer {
+  text-align: center;
+  color: #999f95;
+  font-size: 22rpx;
+  margin-top: 24rpx;
+}
+.text-action {
+  text-align: center;
+  background: transparent;
+  font-size: 26rpx;
+}
+.inline-state {
+  border-radius: 16rpx;
+  padding: 20rpx;
+  background: white;
+  font-size: 26rpx;
+  color: #72786c;
+}
+.empty-state {
+  padding: 80rpx 24rpx;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+.danger-row {
+  color: #ad443b;
+}
+.session-context {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+.session-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+.role-badge {
+  color: #426b4e;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+.join-code-card {
+  align-items: center;
+  text-align: center;
+  gap: 16rpx;
+}
+.join-code {
+  width: 300rpx;
+  height: 300rpx;
+}
+.participant-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx;
+  border-bottom: 1rpx solid #f0f0ec;
+}
+.person-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: #e8ede1;
+  color: #426b4e;
+}
+.choice-row {
+  padding: 32rpx;
+  border-radius: 0;
+  border-bottom: 1rpx solid #f0f0ec;
+}
+.choice-row .hint {
+  display: block;
+  margin-top: 8rpx;
+}
+.note-input {
+  width: 100%;
+  min-height: 150rpx;
+  font-size: 28rpx;
+  line-height: 1.7;
+  box-sizing: border-box;
 }

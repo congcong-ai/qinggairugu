@@ -1,9 +1,10 @@
+import { SessionNote } from '../../components/session-note';
+import { SessionNav } from '../../components/session-nav';
 import { sessionIdFromRoute } from '../../lib/session-route';
-import { AppGuide } from '../../components/app-guide';
 import { useState, useRef } from 'react';
-import { View, Text, Button, Input, Image } from '@tarojs/components';
-import Taro, { useLoad, useDidShow, useDidHide } from '@tarojs/taro';
-import type { CloudSession } from '@pengtou/contracts';
+import { View, Text, Button, Image } from '@tarojs/components';
+import Taro, { useLoad, useDidShow, useDidHide, useUnload } from '@tarojs/taro';
+import type { CloudSession, Profile } from '@pengtou/contracts';
 import {
   currentSessionId,
   setSessionId,
@@ -11,229 +12,190 @@ import {
   message,
   login,
 } from '../../lib/api';
+type SessionInfo = CloudSession & {
+  isOrganizer: boolean;
+  isMember: boolean;
+  archived: boolean;
+};
 export default function SessionPage() {
-  const [session, setSession] = useState<
-    | (CloudSession & {
-        isOrganizer: boolean;
-        isMember: boolean;
-        archived: boolean;
-      })
-    | null
-  >(null);
+  const [session, setSession] = useState<SessionInfo | null>(null);
+  const [people, setPeople] = useState<{ id: string; profile: Profile }[]>([]);
+  const [peopleError, setPeopleError] = useState('');
   const [error, setError] = useState('');
+  const [qr, setQr] = useState('');
+  const [qrError, setQrError] = useState('');
   const ownSession = useRef('');
   const generation = useRef(0);
-  const [qr, setQr] = useState('');
-  const [input, setInput] = useState('');
-  const refresh = () => {
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  async function refresh() {
     const id = ownSession.current;
+    if (!id) return;
     const ticket = ++generation.current;
-    if (id) {
+    const live = () => ticket === generation.current;
+    try {
+      await login();
+      const info = await request<SessionInfo>(`/sessions/${id}`);
+      if (!live()) return;
+      setSession(info);
+      setError('');
       setSessionId(id);
-      setQr('');
-      void login()
-        .then(() =>
-          request<
-            CloudSession & {
-              isOrganizer: boolean;
-              isMember: boolean;
-              archived: boolean;
+      if (info.isOrganizer) {
+        void request<{ imageDataUrl: string }>(`/sessions/${id}/qr`)
+          .then((r) => {
+            if (!live()) return;
+            const path =
+              Taro.env.USER_DATA_PATH + '/qinggai-join-' + id + '.png';
+            Taro.getFileSystemManager().writeFileSync(
+              path,
+              r.imageDataUrl.split(',')[1]!,
+              'base64',
+            );
+            setQr(path);
+            setQrError('');
+          })
+          .catch((e) => {
+            if (live()) setQrError(message(e));
+          });
+      }
+      if (info.isOrganizer || info.isMember) {
+        void request<typeof people>(`/sessions/${id}/participants`)
+          .then((rows) => {
+            if (live()) {
+              setPeople(rows);
+              setPeopleError('');
             }
-          >(`/sessions/${id}`),
-        )
-        .then((result) => {
-          if (ticket === generation.current) {
-            setSession(result);
-            setError('');
-          }
-        })
-        .catch((e) => {
-          if (ticket === generation.current) {
-            setSession(null);
-            setError(message(e));
-          }
-        });
+          })
+          .catch((e) => {
+            if (live()) {
+              setPeople([]);
+              setPeopleError(message(e));
+            }
+          });
+      } else {
+        setPeople([]);
+        setPeopleError('加入后，按本场设置查看参与者。');
+      }
+    } catch (e) {
+      if (live()) {
+        setSession(null);
+        setPeople([]);
+        setQr('');
+        setError(message(e));
+      }
     }
-  };
+  }
   useLoad((options) => {
     try {
       ownSession.current = sessionIdFromRoute(options, currentSessionId());
     } catch (e) {
       setError(message(e));
-      return;
     }
-    refresh();
   });
-  useDidShow(refresh);
+  useDidShow(() => {
+    void refresh();
+    if (timer.current) clearInterval(timer.current);
+    timer.current = setInterval(() => void refresh(), 15000);
+  });
+  useUnload(() => {
+    generation.current++;
+    if (timer.current) clearInterval(timer.current);
+    timer.current = null;
+  });
   useDidHide(() => {
     generation.current++;
+    if (timer.current) clearInterval(timer.current);
+    timer.current = null;
+    setPeople([]);
     setQr('');
   });
   return (
     <View className="page">
-      <Text className="eyebrow">倾盖如故 · 每次相聚，都算数</Text>
-      <View className="hero">
-        <Text className="title">{session?.title || '很高兴在这里遇见你'}</Text>
-        <Text className="subtitle">
-          {session
-            ? `已有 ${session.participantCount} 人在这里`
-            : '去「我的活动」独立记一次相聚，也可以扫码加入。'}
-        </Text>
-        {session && (
+      <SessionNav active="index" />
+      {error && (
+        <View className="inline-state">
+          <Text>{error}</Text>
           <Button
-            className="button"
-            onClick={() =>
-              Taro.navigateTo({ url: '/pages/profile/edit?sid=' + session.id })
-            }
+            className="row-button text-action"
+            onClick={() => void refresh()}
           >
-            {session.isMember ? '修改本场关于我' : '加入这场'}
-          </Button>
-        )}
-      </View>
-      {!session && process.env.NODE_ENV !== 'production' && (
-        <View className="card">
-          <Input
-            placeholder="开发调试：输入 Session 编号"
-            value={input}
-            onInput={(e) => setInput(e.detail.value)}
-          />
-          <Button
-            onClick={() => {
-              try {
-                ownSession.current = sessionIdFromRoute({ sid: input.trim() });
-                refresh();
-              } catch (e) {
-                setError(message(e));
-              }
-            }}
-          >
-            打开这场
+            重新加载
           </Button>
         </View>
       )}
-      {session && (
-        <View className="card">
-          <Button
-            onClick={() =>
-              Taro.navigateTo({
-                url: '/pages/session/people?sid=' + session.id,
-              })
-            }
-          >
-            都有谁
-          </Button>
-          <Button
-            onClick={() =>
-              Taro.navigateTo({ url: '/pages/session/recap?sid=' + session.id })
-            }
-          >
-            这场回顾（本场共享）
-          </Button>
-          <Button
-            onClick={() =>
-              Taro.navigateTo({ url: '/pages/activity/edit?sid=' + session.id })
-            }
-          >
-            添加我的心得（只有我可见）
-          </Button>
-          <Button
-            onClick={() =>
-              Taro.navigateTo({
-                url: '/pages/activity/results?sid=' + session.id,
-              })
-            }
-          >
-            我的整理结果（只有我可见）
-          </Button>
-          {session.isOrganizer && (
+      {session && (session.isOrganizer || session.isMember) && (
+        <SessionNote key={session.id} sid={session.id} title={session.title} />
+      )}
+      {session?.isOrganizer && (
+        <View className="card join-code-card">
+          <Text className="row-title">邀请大家加入</Text>
+          {qr ? (
+            <Image className="join-code" src={qr} mode="aspectFit" />
+          ) : (
+            <Text className="hint">{qrError || '正在加载加入码…'}</Text>
+          )}
+          <Text className="hint">微信扫一扫，加入这场活动</Text>
+          {qrError && (
             <Button
-              onClick={() => {
-                const ticket = generation.current;
-                void request<{ imageDataUrl: string }>(
-                  `/sessions/${session.id}/qr`,
-                )
-                  .then((r) => {
-                    if (ticket !== generation.current) return;
-                    const path =
-                      Taro.env.USER_DATA_PATH +
-                      '/qinggai-join-' +
-                      session.id +
-                      '.png';
-                    Taro.getFileSystemManager().writeFileSync(
-                      path,
-                      r.imageDataUrl.split(',')[1]!,
-                      'base64',
-                    );
-                    setQr(path);
-                  })
-                  .catch((e) => setError(message(e)));
-              }}
+              className="row-button text-action"
+              onClick={() => void refresh()}
             >
-              分享这场 · 生成加入码
+              重试加载
             </Button>
           )}
-          {!!qr && <Image src={qr} mode="widthFix" style={{ width: '100%' }} />}
-          {session.isMember && (
-            <Button
-              onClick={() => {
-                void request<import('@pengtou/contracts').PersonalEntry[]>(
-                  '/me/entries',
-                )
-                  .then(async (rows) => {
-                    const candidates = rows.filter(
-                      (e) =>
-                        !e.sessionId && e.title.trim() === session.title.trim(),
-                    );
-                    if (!candidates.length) {
-                      setError('没有找到同名的私人记录。可以直接添加心得。');
-                      return;
-                    }
-                    const choice = await Taro.showActionSheet({
-                      itemList: candidates
-                        .slice(0, 6)
-                        .map(
-                          (e) => e.title + ' · ' + e.occurredAt.slice(0, 10),
-                        ),
-                    });
-                    const entry = candidates[choice.tapIndex]!;
-                    if (
-                      !(
-                        await Taro.showModal({
-                          title: '关联这份私人记录？',
-                          content:
-                            '只建立活动引用，心得和照片仍只有你可见，不合并、不公开。',
-                        })
-                      ).confirm
-                    )
-                      return;
-                    await request(`/me/entries/${entry.id}`, 'PATCH', {
-                      version: entry.version,
-                      sessionId: session.id,
-                    });
-                    setError('已关联，原心得和照片仍只有你可见。');
-                  })
-                  .catch((e) => setError(message(e)));
-              }}
-            >
-              关联以前记录过的同场活动
-            </Button>
-          )}
-          <Text className="hint">
-            录音、导入和 AI 整理请在 App 中继续记录。
-          </Text>
         </View>
       )}
-      {error && <Text className="hint">{error}</Text>}
+      {session && !session.isOrganizer && !session.isMember && (
+        <Button
+          className="row-button button"
+          onClick={() =>
+            Taro.navigateTo({ url: '/pages/profile/edit?sid=' + session.id })
+          }
+        >
+          加入这场
+        </Button>
+      )}
+      {session?.isMember && !session.isOrganizer && (
+        <Text className="hint">你已加入这场，切换「我的记录」留下心得。</Text>
+      )}
       {session && (
-        <View className="card">
+        <>
+          <View className="page-heading">
+            <Text className="row-title">
+              已加入 · {session.participantCount} 人
+            </Text>
+            <Button
+              className="row-button scan-action"
+              onClick={() => void refresh()}
+            >
+              刷新
+            </Button>
+          </View>
+          {peopleError && <Text className="hint">{peopleError}</Text>}
+          {!peopleError && !people.length && (
+            <Text className="hint">还没有人加入，扫码后会直接显示在这里。</Text>
+          )}
+          {!!people.length && (
+            <View className="list-group">
+              {people.map((person) => (
+                <View className="participant-row" key={person.id}>
+                  <View className="person-avatar">
+                    {person.profile.name.slice(0, 1)}
+                  </View>
+                  <View className="row-content">
+                    <Text className="row-title">{person.profile.name}</Text>
+                    <Text className="hint">{person.profile.introduction}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
           <Text className="hint">
             {session.participantVisibility === 'everyone'
-              ? '本场参与者可以互相查看「关于我」。'
-              : '你的资料仅主办方可见。'}
+              ? '本场参与者的关于我互相可见。'
+              : '参与者资料仅发起人可见。'}
           </Text>
-        </View>
+        </>
       )}
-      <AppGuide />
     </View>
   );
 }

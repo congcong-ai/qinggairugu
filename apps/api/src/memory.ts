@@ -585,6 +585,11 @@ export function mountMemoryRoutes(app: App, db: Database) {
         await tx.execute(
           sql`SELECT id FROM installations WHERE id=${b.installationId} FOR UPDATE`,
         );
+      await tx
+        .delete(schema.activityStarters)
+        .where(
+          sql`${schema.activityStarters.creatorUserId} = ${a.id} OR ${schema.activityStarters.claimedUserId} = ${a.id}`,
+        );
       await tx.delete(schema.entries).where(eq(schema.entries.userId, a.id));
       await tx
         .delete(schema.privateAI)

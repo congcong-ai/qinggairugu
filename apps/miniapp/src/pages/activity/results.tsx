@@ -73,6 +73,7 @@ export default function Results() {
             </Text>
           ))}
           <Button
+            className="row-button"
             onClick={() => {
               void Taro.showModal({
                 title: '删除云端副本？',
