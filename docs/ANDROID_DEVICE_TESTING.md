@@ -32,7 +32,7 @@ pnpm dev:mobile
 # 安装已构建的开发包
 adb install -r apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
 # 开发包安装完成后，连接到本机项目
-adb shell am start -a android.intent.action.VIEW -d 'exp+pengtou://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8082' com.xixisys.pengtou
+adb shell am start -a android.intent.action.VIEW -d 'exp+qinggairugu://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8082' com.bebackpacker.qinggairugu
 ```
 
 `adb devices` 必须显示 `device`；`unauthorized` 表示需要在手机上允许。多台设备连接时，各命令使用 `adb -s <序列号>` 指定目标。

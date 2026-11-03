@@ -2,17 +2,17 @@
 
 ## 构建与身份
 
-- [ ] 确认正式包名；默认 `com.xixisys.pengtou`，通过 `ANDROID_PACKAGE` 配置。
+- [ ] 确认正式包名；默认 `com.bebackpacker.qinggairugu`，通过 `ANDROID_PACKAGE` 配置。
 - [ ] 确认应用名「倾盖如故」、version / versionCode；更新 `apps/mobile/app.config.ts`。
 - [ ] 确认正式 Logo 图标与 splash；主图标为 1024×1024 PNG，Android 自适应前景为带透明底与安全边距的 1024×1024 PNG。
 - [ ] 准备正式 keystore，备份到安全位置，不提交仓库。
-- [ ] 在构建进程中设置 `PENGTOU_KEYSTORE_FILE`、`PENGTOU_KEYSTORE_PASSWORD`、`PENGTOU_KEY_ALIAS`、`PENGTOU_KEY_PASSWORD`。
+- [ ] 在构建进程中设置 `QINGGAIRUGU_KEYSTORE_FILE`、`QINGGAIRUGU_KEYSTORE_PASSWORD`、`QINGGAIRUGU_KEY_ALIAS`、`QINGGAIRUGU_KEY_PASSWORD`。
 - [ ] 未配置正式签名时 release 产物必须保持未签名，禁止把 debug 签名当正式签名。
 - [ ] 设置 `EXPO_PUBLIC_API_URL` 为正式 HTTPS 服务地址。
 
 ```bash
 export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
-pnpm --filter @pengtou/mobile android:prebuild
+pnpm --filter @qinggairugu/mobile android:prebuild
 cd apps/mobile/android
 ./gradlew :app:assembleDebug
 ./gradlew :app:assembleRelease :app:bundleRelease
@@ -137,3 +137,7 @@ ARM64 debug 已实际构建成功，503 项任务通过。产物 `/tmp/qinggai-v
 - 校验报告：`/tmp/qinggai-v02-signed-release-validation.json`。
 
 当前 ADB 无设备，未做覆盖安装或录音/照片真机验收；未上传、发布 APK 或部署线上服务。签名一致支持正常覆盖升级，但实际数据保留仍需真机验证，不能通过卸载重装验收。
+
+## 2026-10-29 包名变更
+
+用户指定新包名 `com.bebackpacker.qinggairugu`，工作区命名空间、新安装存储及链接协议统一为qinggairugu。上文旧包名、旧APK摘要和覆盖安装结果是历史证据，不适用于新包。新包不覆盖旧包，不能自动读取旧包本机数据；禁止卸载旧包作为迁移手段。签名证书继续沿用原证书。正式下载与release-manifest仍描述旧产物，必须在新包真实构建和独立验证后按发布流程更新，不能只改manifest中的包名。

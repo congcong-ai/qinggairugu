@@ -1,3 +1,4 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { SessionNav } from '../../components/session-nav';
 import { sessionIdFromRoute } from '../../lib/session-route';
 import { useState, useRef } from 'react';
@@ -7,6 +8,7 @@ import { request, currentSessionId, message } from '../../lib/api';
 export default function Recap() {
   const [content, setContent] = useState('主办方还没有发布这场回顾。');
   const ownSession = useRef('');
+  usePageShare(() => ({ id: ownSession.current }));
   const generation = useRef(0);
   useLoad((options) => {
     try {

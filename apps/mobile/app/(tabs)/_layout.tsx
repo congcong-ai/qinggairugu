@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- Metro 本地图片需要静态 require。 */
 import { Tabs } from 'expo-router';
 import { Image } from 'react-native';
-import { colors } from '@pengtou/design-tokens';
+import { colors } from '@qinggairugu/design-tokens';
 export default function TabsLayout() {
   return (
     <Tabs

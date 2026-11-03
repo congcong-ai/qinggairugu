@@ -27,7 +27,7 @@ else
     flock -x 8
     umask 022
     cd "$release"
-    pnpm --filter @pengtou/api... install --prod --no-optional --frozen-lockfile \
+    pnpm --filter @qinggairugu/api... install --prod --no-optional --frozen-lockfile \
       --store-dir /root/.local/share/pnpm/store --package-import-method=hardlink
   ) 8>/run/lock/xixisys-pnpm-store.lock
 fi

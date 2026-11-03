@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Text, TextInput } from 'react-native';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { readAIKey, saveAIKey, deleteAIKey } from '../src/ai-key';
-import { BailianProvider } from '@pengtou/ai';
+import { BailianProvider } from '@qinggairugu/ai';
 export default function AISettings() {
   const [key, setKey] = useState('');
   const [configured, setConfigured] = useState(false);

@@ -4,8 +4,13 @@ import { createAudioPlayer } from 'expo-audio';
 import { randomUUID } from 'expo-crypto';
 import { Alert } from 'react-native';
 import { getDatabase } from './storage/database';
-import { activeAIJobs, activeAudioImports } from './activity';
+import {
+  activeAIJobs,
+  activeAudioImports,
+  assertAccountStable,
+} from './activity';
 export async function importAudio(sessionId: string) {
+  assertAccountStable();
   if (activeAudioImports.has(sessionId))
     throw new Error('这场正在导入录音，请稍候');
   activeAudioImports.add(sessionId);

@@ -25,7 +25,7 @@ const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const api = 'https://qgrg.bebackpacker.com';
 const config = {
   version: '0.1.2',
-  android: { versionCode: 3, package: 'com.xixisys.pengtou' },
+  android: { versionCode: 3, package: 'com.bebackpacker.qinggairugu' },
 };
 const apk = Buffer.from('PK\x03\x04测试安装包内容');
 let root;

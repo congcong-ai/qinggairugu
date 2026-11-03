@@ -29,6 +29,11 @@ export default function Home() {
     <Page>
       <Heading title="倾盖如故" subtitle="把每一次见面留下来。" />
       <Action label="记录一场活动" onPress={() => router.push('/start')} />
+      <Action
+        secondary
+        label="先看看示例"
+        onPress={() => router.push('/example')}
+      />
       <Heading title="最近记录" />
       {error && <Text style={styles.body}>{error}</Text>}
       {recent.map((session) => (

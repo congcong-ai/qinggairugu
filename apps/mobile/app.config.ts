@@ -2,14 +2,23 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: '倾盖如故',
   slug: 'qinggai',
-  version: '0.2.1',
+  version: '0.2.3',
   icon: './assets/icon.png',
-  scheme: 'pengtou',
+  scheme: 'qinggairugu',
   orientation: 'portrait',
   userInterfaceStyle: 'light',
+  ios: {
+    appleTeamId: 'G6692S3U7C',
+    bundleIdentifier: 'com.bebackpacker.qinggairugu',
+    buildNumber: '2',
+    supportsTablet: false,
+    infoPlist: {
+      CFBundleLocalizations: ['zh_CN'],
+    },
+  },
   android: {
-    package: process.env.ANDROID_PACKAGE || 'com.xixisys.pengtou',
-    versionCode: 5,
+    package: process.env.ANDROID_PACKAGE || 'com.bebackpacker.qinggairugu',
+    versionCode: 7,
     adaptiveIcon: {
       foregroundImage: './assets/icon-foreground.png',
       backgroundColor: '#F7F4EE',
@@ -28,6 +37,7 @@ const config: ExpoConfig = {
   },
   plugins: [
     'expo-router',
+    ['./plugins/with-wechat.cjs', { appId: 'wx2f97ade32e73a58b' }],
     'expo-dev-client',
     // SDK 自带 vec.so 只有 4 KB ELF 对齐，使用既有 JS 相似度检索保留历史向量。
     ['expo-sqlite', { withSQLiteVecExtension: false }],
@@ -57,6 +67,7 @@ const config: ExpoConfig = {
       },
     ],
     './plugins/with-local-only-backup.cjs',
+    './plugins/with-ios-scene-delegate.cjs',
   ],
   experiments: { typedRoutes: true },
 };

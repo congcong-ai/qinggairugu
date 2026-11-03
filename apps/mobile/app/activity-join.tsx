@@ -3,7 +3,7 @@ import { Text, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { bindingStatus, cloudRequest, openCloudActivity } from '../src/cloud';
-import type { CloudSession } from '@pengtou/contracts';
+import type { CloudSession } from '@qinggairugu/contracts';
 export default function JoinActivity() {
   const [input, setInput] = useState('');
   const [name, setName] = useState('');

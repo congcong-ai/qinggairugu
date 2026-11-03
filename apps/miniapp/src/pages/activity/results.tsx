@@ -1,11 +1,13 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { useState, useRef } from 'react';
 import { View, Text, Button } from '@tarojs/components';
 import { useLoad, useDidShow, useDidHide } from '@tarojs/taro';
 import Taro from '@tarojs/taro';
-import type { PrivateAIInput } from '@pengtou/contracts';
+import type { PrivateAIInput } from '@qinggairugu/contracts';
 import { login, request, message } from '../../lib/api';
 type Result = PrivateAIInput & { id: string; updatedAt: string };
 export default function Results() {
+  usePageShare();
   const [rows, setRows] = useState<Result[]>([]);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<{ sid?: string; localId?: string }>({});

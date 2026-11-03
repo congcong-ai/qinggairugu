@@ -1,11 +1,13 @@
 import { beforeEach, afterEach, it, expect, vi } from 'vitest';
 const state = vi.hoisted(() => ({ queries: [] as string[] }));
 vi.mock('expo-secure-store', () => ({
-  getItemAsync: async () =>
-    JSON.stringify({
-      id: '00000000-0000-4000-8000-000000000001',
-      secret: '0'.repeat(64),
-    }),
+  getItemAsync: async (key: string) =>
+    key === 'qinggairugu.installation'
+      ? JSON.stringify({
+          id: '00000000-0000-4000-8000-000000000001',
+          secret: '0'.repeat(64),
+        })
+      : null,
 }));
 vi.mock('expo-crypto', () => ({
   randomUUID: () => '00000000-0000-4000-8000-000000000002',
@@ -25,12 +27,24 @@ vi.mock('./storage/database', () => {
   };
   return { getDatabase: async () => db };
 });
-import { syncParticipants, CloudRequestError } from './cloud';
+import {
+  syncParticipants,
+  CloudRequestError,
+  cloudRequest,
+  activeCloudRequests,
+} from './cloud';
 beforeEach(() => {
   state.queries = [];
   vi.stubGlobal('__DEV__', true);
 });
 afterEach(() => vi.unstubAllGlobals());
+it('身份读取开始即锁定切号，网络失败后释放锁', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('网络失败')));
+  const pending = cloudRequest('/me');
+  expect(activeCloudRequests).toBe(1);
+  await expect(pending).rejects.toThrow('网络失败');
+  expect(activeCloudRequests).toBe(0);
+});
 it('云端请求使用显式映射，不能把本地 ID 当作云端 ID', async () => {
   const fetcher = vi.fn(
     async (url: string) =>

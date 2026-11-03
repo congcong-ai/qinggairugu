@@ -1,5 +1,5 @@
 {
-  "name": "@pengtou/api",
+  "name": "@qinggairugu/api",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -13,8 +13,8 @@
     "hono": "^4.13.13",
     "@hono/node-server": "^1.19.5",
     "pino": "^10.0.0",
-    "@pengtou/contracts": "workspace:*",
-    "@pengtou/database": "workspace:*",
+    "@qinggairugu/contracts": "workspace:*",
+    "@qinggairugu/database": "workspace:*",
     "zod": "^4.6.7",
     "qrcode": "^1.5.4"
   },

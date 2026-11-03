@@ -1,4 +1,5 @@
-import { localDateInput, dateInputToISOString } from '@pengtou/shared';
+import { activePhotoImports, assertAccountStable } from '../src/activity';
+import { localDateInput, dateInputToISOString } from '@qinggairugu/shared';
 import { persistPhoto } from '../src/persist-photo';
 import { LocalMediaNotice } from '../src/local-media-notice';
 import { useState, useEffect, useRef } from 'react';
@@ -11,7 +12,7 @@ import { File, Directory, Paths } from 'expo-file-system';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { getDatabase } from '../src/storage/database';
 import { bindingStatus, cloudRequest } from '../src/cloud';
-import type { PersonalEntry } from '@pengtou/contracts';
+import type { PersonalEntry } from '@qinggairugu/contracts';
 export default function Entry() {
   const params = useLocalSearchParams<{ id?: string; cloudEntryId?: string }>();
   const [id, setId] = useState(params.id ?? randomUUID());
@@ -188,8 +189,10 @@ export default function Entry() {
     }
   }
   async function addPhoto(mode: 'camera' | 'library') {
+    assertAccountStable();
     if (busy || photoLock.current) return;
     photoLock.current = true;
+    activePhotoImports.add(String(id));
     setBusy(true);
     try {
       await save();
@@ -259,6 +262,7 @@ export default function Entry() {
       setStatus(e instanceof Error ? e.message : '未完成');
     } finally {
       photoLock.current = false;
+      activePhotoImports.delete(String(id));
       setBusy(false);
     }
   }

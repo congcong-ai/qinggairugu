@@ -10,12 +10,20 @@ export async function migrateCloud(sql: Sql) {
     '0005_recap_lifecycle.sql',
     '0006_activity_starters.sql',
     '0007_wechat_accounts.sql',
+    '0008_account_devices.sql',
   ];
   await sql.begin(async (txn) => {
     await txn`SELECT pg_advisory_xact_lock(706568674)`;
-    await txn`CREATE TABLE IF NOT EXISTS pengtou_migrations (version INTEGER PRIMARY KEY, checksum TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`;
+    // 只迁移记账表名称，保留历史迁移版本和校验和，防止重跑已有迁移。
+    const [ledgers] =
+      await txn`SELECT to_regclass('qinggairugu_migrations') AS current, to_regclass('pengtou_migrations') AS legacy`;
+    if (ledgers?.current && ledgers?.legacy)
+      throw new Error('检测到两份迁移记录，请人工核对，禁止覆盖');
+    if (!ledgers?.current && ledgers?.legacy)
+      await txn`ALTER TABLE pengtou_migrations RENAME TO qinggairugu_migrations`;
+    await txn`CREATE TABLE IF NOT EXISTS qinggairugu_migrations (version INTEGER PRIMARY KEY, checksum TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`;
     const existing =
-      await txn`SELECT version,checksum FROM pengtou_migrations ORDER BY version`;
+      await txn`SELECT version,checksum FROM qinggairugu_migrations ORDER BY version`;
     if (existing.some((row) => row.version > files.length))
       throw new Error('数据库版本较新，请升级服务');
     for (const [index, file] of files.entries()) {
@@ -30,7 +38,7 @@ export async function migrateCloud(sql: Sql) {
         throw new Error('已执行迁移不能修改，请创建新迁移');
       if (!applied) {
         await txn.unsafe(source);
-        await txn`INSERT INTO pengtou_migrations(version,checksum) VALUES(${version},${checksum})`;
+        await txn`INSERT INTO qinggairugu_migrations(version,checksum) VALUES(${version},${checksum})`;
       }
     }
   });

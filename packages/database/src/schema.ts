@@ -6,11 +6,13 @@ import {
   jsonb,
   primaryKey,
   integer,
+  boolean,
 } from 'drizzle-orm/pg-core';
-import type { Profile } from '@pengtou/contracts';
+import type { Profile } from '@qinggairugu/contracts';
 export const installations = pgTable('installations', {
   id: uuid().primaryKey(),
   secretHash: text('secret_hash').notNull(),
+  accountRequired: boolean('account_required').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),

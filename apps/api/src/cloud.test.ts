@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID, randomBytes } from 'node:crypto';
-import { postgres } from '@pengtou/database';
-import { connectDatabase } from '@pengtou/database';
+import { postgres } from '@qinggairugu/database';
+import { connectDatabase } from '@qinggairugu/database';
 import { migrateCloud } from '../../../packages/database/src/migrate';
 import { createCloudApp } from './cloud';
 const base = process.env.TEST_DATABASE_URL;
 describe.skipIf(!base)('真实 PostgreSQL 共享数据链路', () => {
-  const name = `pengtou_test_${randomBytes(6).toString('hex')}`;
+  const name = `qinggairugu_test_${randomBytes(6).toString('hex')}`;
   let cleanup: () => Promise<void>;
   let app: ReturnType<typeof createCloudApp>;
   const device = { id: randomUUID(), secret: randomBytes(32).toString('hex') };

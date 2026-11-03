@@ -1,3 +1,4 @@
+vi.mock('../account-store', () => ({ storageScope: async () => 'legacy' }));
 import { DatabaseSync } from 'node:sqlite';
 import { beforeAll, afterAll, expect, it, vi } from 'vitest';
 import { activeAIJobs, activeAudioImports } from '../activity';

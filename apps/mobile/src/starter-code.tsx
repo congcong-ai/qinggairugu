@@ -4,7 +4,7 @@ import { randomUUID } from 'expo-crypto';
 import { router } from 'expo-router';
 import { Card, Action, styles } from './ui';
 import { bindingStatus, cloudRequest } from './cloud';
-import type { Profile } from '@pengtou/contracts';
+import type { Profile } from '@qinggairugu/contracts';
 export function StarterCode({ title }: { title: string }) {
   const [open, setOpen] = useState(false),
     [name, setName] = useState(''),

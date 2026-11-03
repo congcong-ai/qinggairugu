@@ -25,7 +25,7 @@
 手机联调时，小程序 `TARO_APP_API_URL` 指向电脑局域网地址（本次为 `http://192.168.3.192:9001`），手机与电脑应在同一局域网。开发身份构建命令：
 
 ```sh
-TARO_APP_API_URL=http://192.168.3.192:9001 TARO_APP_DEV_AUTH=true NODE_ENV=development pnpm --filter @pengtou/miniapp build
+TARO_APP_API_URL=http://192.168.3.192:9001 TARO_APP_DEV_AUTH=true NODE_ENV=development pnpm --filter @qinggairugu/miniapp build
 ```
 
 地址随网络变化调整。正式构建不能使用开发身份；测试号、游客占位 AppID 和正式账号应明确区分。不得借用其它项目的 AppID。
@@ -63,3 +63,15 @@ TARO_APP_API_URL=http://192.168.3.192:9001 TARO_APP_DEV_AUTH=true NODE_ENV=devel
 ## 2026-10-23 本地生产候选包
 
 `/tmp/qinggai-v0.2.0-wechat-production.zip` 为正式 HTTPS API 编译产物；压缩包内启用 urlCheck，关闭上传 Source Map，不包含开发身份或本地 API 地址。SHA256 `cf1a8405e205ec30a7d031e89286aba9db94733b9b99a1d3305cc49eef18d261`。凭据泄漏扫描通过，但微信工具和真机未验收，线上 v0.2 API 尚不可用；未上传、未提交审核。仓库开发配置保持本地联调设置。
+
+## 2026-11-02 分享修复
+
+此前页面未注册微信分享回调，现已为全部页面配置转发给朋友；活动页增加「分享这场给朋友」。活动、个人页和介绍等安全入口支持朋友圈，编辑、绑定及领取等操作页面不开放朋友圈。
+
+- 活动分享统一进入 `/pages/session/index?sid=场次编号`，从官方小程序码 scene 进入后也保留同一编号。
+- 私人心得、整理结果和个人资料页面转发时只发送小程序首页，不发送私人内容、身份凭证或编辑参数。
+- 已通过 10 项分享和路由测试、miniapp TypeScript、ESLint 和生产构建，并检查全部 15 个页面编译后的分享配置。
+- 发布前须用微信真机验证：右上角转发、活动页分享按钮、朋友打开后进入同场、朋友圈单页进入，以及私人页面分享卡片无私人内容。CLI 预览成功不代表上述真机交互已经验收。
+- 本地修复不会自动改变已发布版本，需要重新上传、提交审核并发布。
+
+2026-11-02：重新登录微信开发者工具后，CLI 预览成功，包体 478874 字节（467.7 KB）。预览二维码存于 `/private/tmp/qinggairugu-share/preview.jpg`；真实微信转发与朋友打开同场仍需真机验证，尚未上传审核或发布。

@@ -1,6 +1,6 @@
 import { beforeAll, afterAll, describe, it, expect } from 'vitest';
 import { randomUUID, randomBytes } from 'node:crypto';
-import { connectDatabase, postgres, schema, eq } from '@pengtou/database';
+import { connectDatabase, postgres, schema, eq } from '@qinggairugu/database';
 import { migrateCloud } from '../../../packages/database/src/migrate';
 import { createCloudApp } from './cloud';
 const base = process.env.TEST_DATABASE_URL;

@@ -1,7 +1,7 @@
 import { bindingStatus, cloudRequest, cloudSessionId } from './cloud';
 import { getDatabase } from './storage/database';
 import { activeAIJobs } from './activity';
-import type { PrivateAIInput } from '@pengtou/contracts';
+import type { PrivateAIInput } from '@qinggairugu/contracts';
 export async function syncState(id: string) {
   const state = await bindingStatus();
   const binding = state.bindings[0];

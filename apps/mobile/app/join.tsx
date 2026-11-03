@@ -3,7 +3,7 @@ import { Image, Text } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { shareSession, syncParticipants } from '../src/cloud';
-import type { Profile } from '@pengtou/contracts';
+import type { Profile } from '@qinggairugu/contracts';
 export default function Join() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [qr, setQr] = useState<Awaited<ReturnType<typeof shareSession>> | null>(

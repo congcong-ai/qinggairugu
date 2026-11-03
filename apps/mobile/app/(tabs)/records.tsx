@@ -5,7 +5,7 @@ import { useFocusEffect, router } from 'expo-router';
 import { Page, Heading, Card, Action, styles } from '../../src/ui';
 import { listSessions, type LocalSession } from '../../src/storage/database';
 import { refreshActivities, openCloudActivity } from '../../src/cloud';
-import type { ActivityItem } from '@pengtou/contracts';
+import type { ActivityItem } from '@qinggairugu/contracts';
 export default function Records() {
   const [local, setLocal] = useState<LocalSession[]>([]);
   const [cloud, setCloud] = useState<ActivityItem[]>([]);

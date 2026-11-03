@@ -8,7 +8,7 @@
 >
 > 拼音：QingGaiRuGu
 >
-> 推荐英文内部代号：`qinggai`（现有包名、数据库和存储键中的 `pengtou` 为兼容标识，保留以保护已有数据）
+> 推荐英文内部代号：`qinggai`（2026-10-29 用户授权统一标识为 `qinggairugu`，Android 包名为 `com.bebackpacker.qinggairugu`；旧包数据不自动迁移）
 
 ---
 
@@ -292,7 +292,7 @@ MVP 保持后端非常轻。
 
 数据库例如：
 
-`pengtou.db`
+`qinggairugu.db`
 
 ---
 

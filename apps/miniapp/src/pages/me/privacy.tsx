@@ -1,7 +1,9 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { View, Text, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { login, request, message } from '../../lib/api';
 export default function Privacy() {
+  usePageShare();
   async function remove() {
     const result = await Taro.showModal({
       title: '删除保存资料？',

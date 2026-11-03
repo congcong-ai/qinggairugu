@@ -3,7 +3,7 @@ import Taro from '@tarojs/taro';
 import { sessionIdFromRoute } from '../lib/session-route';
 import { useState, useRef } from 'react';
 import { useDidShow, useDidHide } from '@tarojs/taro';
-import type { CloudSession } from '@pengtou/contracts';
+import type { CloudSession } from '@qinggairugu/contracts';
 import { login, request, message } from '../lib/api';
 import { currentSessionId } from '../lib/api';
 

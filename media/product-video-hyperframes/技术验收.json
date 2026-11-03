@@ -1,0 +1,80 @@
+[
+  {
+    "file": "/Users/peter/code/congcongai/qinggairugu/media/product-video-hyperframes/xiaohongshu/qinggairugu-xiaohongshu.mp4",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 1080,
+          "height": 1440,
+          "r_frame_rate": "30/1"
+        },
+        {
+          "codec_name": "aac",
+          "codec_type": "audio",
+          "r_frame_rate": "0/0"
+        }
+      ],
+      "format": {
+        "duration": "46.200000",
+        "size": "3638983"
+      }
+    },
+    "decode": "通过"
+  },
+  {
+    "file": "/Users/peter/code/congcongai/qinggairugu/media/product-video-hyperframes/social/qinggairugu-douyin.mp4",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 1080,
+          "height": 1920,
+          "r_frame_rate": "30/1"
+        },
+        {
+          "codec_name": "aac",
+          "codec_type": "audio",
+          "r_frame_rate": "0/0"
+        }
+      ],
+      "format": {
+        "duration": "46.200000",
+        "size": "3891527"
+      }
+    },
+    "decode": "通过"
+  },
+  {
+    "file": "/Users/peter/code/congcongai/qinggairugu/media/product-video-hyperframes/website/qinggairugu-website.mp4",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 1920,
+          "height": 1080,
+          "r_frame_rate": "30/1"
+        },
+        {
+          "codec_name": "aac",
+          "codec_type": "audio",
+          "r_frame_rate": "0/0"
+        }
+      ],
+      "format": {
+        "duration": "46.200000",
+        "size": "3853316"
+      }
+    },
+    "decode": "通过"
+  }
+]

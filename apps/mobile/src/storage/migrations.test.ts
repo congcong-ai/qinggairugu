@@ -5,8 +5,8 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { migrate, type MigrationDatabase } from './migrations';
 it('真实 SQLite 迁移、重启持久化、外键级联与幂等', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'pengtou-db-'));
-  const path = join(dir, 'pengtou.db');
+  const dir = mkdtempSync(join(tmpdir(), 'qinggairugu-db-'));
+  const path = join(dir, 'qinggairugu.db');
   let db = new DatabaseSync(path);
   const adapter: MigrationDatabase = {
     async execAsync(sql) {

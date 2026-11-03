@@ -1,3 +1,4 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { SessionNav } from '../../components/session-nav';
 import { sessionIdFromRoute } from '../../lib/session-route';
 import { View, Text, Button } from '@tarojs/components';
@@ -11,6 +12,7 @@ export default function Personal() {
     isMember: false,
     isOrganizer: false,
   });
+  usePageShare(() => ({ id: session.id, title: session.title }));
   const [error, setError] = useState('');
   const [more, setMore] = useState(false);
   useLoad((options) => {
@@ -65,7 +67,7 @@ export default function Personal() {
             <Button
               className="row-button"
               onClick={() => {
-                void request<import('@pengtou/contracts').PersonalEntry[]>(
+                void request<import('@qinggairugu/contracts').PersonalEntry[]>(
                   '/me/entries',
                 )
                   .then(async (rows) => {

@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { activityTimeline } from './activity-timeline';
 import type { LocalSession } from './storage/database';
-import type { ActivityItem } from '@pengtou/contracts';
+import type { ActivityItem } from '@qinggairugu/contracts';
 const local = (id: string, sid: string | null = null): LocalSession => ({
   id,
   cloud_id: sid,

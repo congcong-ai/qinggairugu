@@ -1,5 +1,5 @@
 import { createWebsiteApp } from './website';
-import { connectDatabase } from '@pengtou/database';
+import { connectDatabase } from '@qinggairugu/database';
 import { createCloudApp } from './cloud';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';

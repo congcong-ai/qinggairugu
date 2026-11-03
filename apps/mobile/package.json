@@ -1,5 +1,5 @@
 {
-  "name": "@pengtou/mobile",
+  "name": "@qinggairugu/mobile",
   "private": true,
   "version": "0.1.0",
   "main": "expo-router/entry",
@@ -11,10 +11,10 @@
     "android:prebuild": "expo prebuild --platform android"
   },
   "dependencies": {
-    "@pengtou/ai": "workspace:*",
-    "@pengtou/contracts": "workspace:*",
-    "@pengtou/design-tokens": "workspace:*",
-    "@pengtou/shared": "workspace:*",
+    "@qinggairugu/ai": "workspace:*",
+    "@qinggairugu/contracts": "workspace:*",
+    "@qinggairugu/design-tokens": "workspace:*",
+    "@qinggairugu/shared": "workspace:*",
     "expo": "~58.0.14",
     "expo-audio": "~58.0.9",
     "expo-constants": "~58.0.12",

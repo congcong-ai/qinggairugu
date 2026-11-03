@@ -1,12 +1,28 @@
+import { assertAccountStable } from './activity';
+import { readAccount, storageScope, accountGeneration } from './account-store';
 import * as SecureStore from 'expo-secure-store';
 import { randomUUID, getRandomBytesAsync } from 'expo-crypto';
 import { getDatabase } from './storage/database';
-import type { CloudSession, Profile } from '@pengtou/contracts';
-const base = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:9001';
-let identityPromise: Promise<{ id: string; secret: string }> | undefined;
-export async function initializeDeviceIdentity() {
+import type { CloudSession, Profile } from '@qinggairugu/contracts';
+const base =
+  process.env.EXPO_PUBLIC_API_URL ||
+  (typeof __DEV__ !== 'undefined' && __DEV__
+    ? 'http://10.0.2.2:9001'
+    : 'https://qgrg.bebackpacker.com');
+const identityPromises = new Map<
+  string,
+  Promise<{ id: string; secret: string }>
+>();
+export let activeCloudRequests = 0;
+export async function initializeDeviceIdentity(input?: string) {
+  const scope = input ?? (await storageScope());
+  const key =
+    scope === 'legacy'
+      ? 'qinggairugu.installation'
+      : `qinggairugu.installation.${scope}`;
+  let identityPromise = identityPromises.get(scope);
   identityPromise ??= (async () => {
-    const existing = await SecureStore.getItemAsync('pengtou.installation');
+    const existing = await SecureStore.getItemAsync(key);
     if (existing) return JSON.parse(existing) as { id: string; secret: string };
     const value = {
       id: randomUUID(),
@@ -14,15 +30,13 @@ export async function initializeDeviceIdentity() {
         b.toString(16).padStart(2, '0'),
       ).join(''),
     };
-    await SecureStore.setItemAsync(
-      'pengtou.installation',
-      JSON.stringify(value),
-    );
+    await SecureStore.setItemAsync(key, JSON.stringify(value));
     return value;
   })().catch((error) => {
-    identityPromise = undefined;
+    identityPromises.delete(scope);
     throw error;
   });
+  identityPromises.set(scope, identityPromise);
   return identityPromise;
 }
 export class CloudRequestError extends Error {
@@ -38,27 +52,42 @@ export async function cloudRequest<T>(
   method = 'GET',
   data?: unknown,
 ): Promise<T> {
+  assertAccountStable();
   if (!__DEV__ && !base.startsWith('https://'))
     throw new Error('正式环境需要 HTTPS 服务地址');
-  const device = await initializeDeviceIdentity();
-  const response = await fetch(base + path, {
-    method,
-    headers: {
-      'content-type': 'application/json',
-      'x-installation-id': device.id,
-      'x-installation-secret': device.secret,
-    },
-    ...(data ? { body: JSON.stringify(data) } : {}),
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!response.ok) {
-    const result = await response.json().catch(() => ({}));
-    throw new CloudRequestError(
-      result.error || '暂时无法连接倾盖如故服务，请稍后重试',
-      response.status,
-    );
+  const epoch = accountGeneration();
+  activeCloudRequests++;
+  try {
+    const account = await readAccount();
+    const device = await initializeDeviceIdentity();
+    assertAccountStable();
+    const response = await fetch(base + path, {
+      method,
+      headers: {
+        'content-type': 'application/json',
+        ...(account ? { authorization: `Bearer ${account.token}` } : {}),
+        'x-installation-id': device.id,
+        'x-installation-secret': device.secret,
+      },
+      ...(data ? { body: JSON.stringify(data) } : {}),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (epoch !== accountGeneration())
+      throw new Error('账号已切换，请重新打开');
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new CloudRequestError(
+        result.error || '暂时无法连接倾盖如故服务，请稍后重试',
+        response.status,
+      );
+    }
+    const result = (await response.json()) as T;
+    if (epoch !== accountGeneration())
+      throw new Error('账号已切换，请重新打开');
+    return result;
+  } finally {
+    activeCloudRequests--;
   }
-  return response.json() as Promise<T>;
 }
 export async function ensureCloudSession(id: string) {
   const db = await getDatabase();
@@ -186,14 +215,14 @@ export async function refreshActivities() {
     state.userId ?? '',
   );
   if (!state.userId) return [];
-  const all: import('@pengtou/contracts').ActivityItem[] = [];
+  const all: import('@qinggairugu/contracts').ActivityItem[] = [];
   let offset: number | null = 0;
   while (offset !== null) {
     const data: {
-      items: import('@pengtou/contracts').ActivityItem[];
+      items: import('@qinggairugu/contracts').ActivityItem[];
       nextOffset: number | null;
     } = await cloudRequest<{
-      items: import('@pengtou/contracts').ActivityItem[];
+      items: import('@qinggairugu/contracts').ActivityItem[];
       nextOffset: number | null;
     }>(`/me/activities?offset=${offset}`);
     all.push(...data.items);

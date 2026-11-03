@@ -3,7 +3,7 @@ import { Text, Switch, Alert, View } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { syncPrivateAI, revokePrivateAI, syncState } from '../src/private-sync';
-import type { PrivateAIInput } from '@pengtou/contracts';
+import type { PrivateAIInput } from '@qinggairugu/contracts';
 export default function Sync() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [fields, setFields] = useState<PrivateAIInput['fields']>([

@@ -1,9 +1,11 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { useState, useRef } from 'react';
 import { View, Text, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { login, request, setSessionId, message } from '../../lib/api';
-import { defaultSessionTitle } from '@pengtou/shared';
+import { defaultSessionTitle } from '@qinggairugu/shared';
 export default function Start() {
+  usePageShare();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const id = useRef('');

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { View, Text, Textarea, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import type { PersonalEntry } from '@pengtou/contracts';
+import type { PersonalEntry } from '@qinggairugu/contracts';
 import { request, message } from '../lib/api';
 export function SessionNote({ sid, title }: { sid: string; title: string }) {
   const key = 'qinggai:session-note-draft:' + sid;

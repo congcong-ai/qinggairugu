@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { type Database, schema, eq, and, sql } from '@pengtou/database';
+import { type Database, schema, eq, and, sql } from '@qinggairugu/database';
 export class IdentityConflict extends Error {}
 // 调用方必须先在微信服务端验证 code，不能传入客户端自报身份。
 export async function resolveWechatIdentity(

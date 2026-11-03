@@ -1,0 +1,7 @@
+**/.hyperframes/
+**/.thumbnails/
+**/node_modules/
+**/*.mp4
+**/renders/
+**/.agents/
+**/.claude/

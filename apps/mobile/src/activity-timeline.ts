@@ -1,4 +1,4 @@
-import type { ActivityItem } from '@pengtou/contracts';
+import type { ActivityItem } from '@qinggairugu/contracts';
 import type { LocalSession } from './storage/database';
 export interface TimelineItem extends ActivityItem {
   localRecords: LocalSession[];

@@ -1,8 +1,8 @@
-import { dateInputToISOString } from '@pengtou/shared';
+import { dateInputToISOString } from '@qinggairugu/shared';
 import { useRef, useState } from 'react';
 import { View, Text, Button, Input, Image } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import type { Profile } from '@pengtou/contracts';
+import type { Profile } from '@qinggairugu/contracts';
 import { login, request, message, setSessionId } from '../lib/api';
 export function StarterCode({ title, date }: { title: string; date: string }) {
   const [open, setOpen] = useState(false),

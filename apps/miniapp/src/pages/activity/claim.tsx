@@ -1,9 +1,11 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { useState } from 'react';
 import { View, Text, Button } from '@tarojs/components';
 import Taro, { useLoad } from '@tarojs/taro';
 import { login, request, message, setSessionId } from '../../lib/api';
 import { sessionIdFromRoute } from '../../lib/session-route';
 export default function Claim() {
+  usePageShare();
   const [error, setError] = useState('');
   useLoad((options) => {
     void (async () => {

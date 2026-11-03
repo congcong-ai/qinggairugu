@@ -5,7 +5,7 @@ import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { refreshActivities, bindingStatus, cloudRequest } from '../src/cloud';
 import { getDatabase } from '../src/storage/database';
 import { activeAIJobs, activeAudioImports } from '../src/activity';
-import type { ActivityItem } from '@pengtou/contracts';
+import type { ActivityItem } from '@qinggairugu/contracts';
 export default function Link() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [rows, setRows] = useState<ActivityItem[]>([]);

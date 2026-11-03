@@ -1,4 +1,8 @@
-import { activeAIJobs, activeAudioImports } from './activity';
+import {
+  activeAIJobs,
+  activeAudioImports,
+  assertAccountStable,
+} from './activity';
 import {
   createContext,
   useContext,
@@ -7,7 +11,7 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import {
   AudioModule,
   type RecordingOptions,
@@ -18,7 +22,7 @@ import {
 } from 'expo-audio';
 import { Paths, File } from 'expo-file-system';
 import { randomUUID } from 'expo-crypto';
-import { defaultSessionTitle } from '@pengtou/shared';
+import { defaultSessionTitle } from '@qinggairugu/shared';
 import { getDatabase } from './storage/database';
 
 type Status = 'idle' | 'recording' | 'paused' | 'interrupted';
@@ -58,7 +62,7 @@ export function RecordingProvider({ children }: PropsWithChildren) {
   const recordingOptions: RecordingOptions = {
     ...RecordingPresets.HIGH_QUALITY,
     directory: 'document',
-    extension: '.aac',
+    extension: Platform.OS === 'ios' ? '.m4a' : '.aac',
     numberOfChannels: 1,
     bitRate: 64000,
     android: { outputFormat: 'aac_adts', audioEncoder: 'aac' },
@@ -136,6 +140,7 @@ export function RecordingProvider({ children }: PropsWithChildren) {
   }
   const start = (existingId?: string) =>
     run(async () => {
+      assertAccountStable();
       if (activeRef.current) return;
       if (
         existingId &&
@@ -153,13 +158,17 @@ export function RecordingProvider({ children }: PropsWithChildren) {
         setError('设备空间不足，请至少预留 50 MB 后再开始。');
         return;
       }
-      await AudioModule.requestNotificationPermissionsAsync();
+      assertAccountStable();
+      if (Platform.OS === 'android') {
+        await AudioModule.requestNotificationPermissionsAsync();
+      }
       await setAudioModeAsync({
         allowsRecording: true,
         allowsBackgroundRecording: true,
         playsInSilentMode: true,
         interruptionMode: 'doNotMix',
       });
+      assertAccountStable();
       const db = await getDatabase();
       const now = new Date().toISOString();
       const sessionId = existingId ?? randomUUID();
@@ -173,7 +182,11 @@ export function RecordingProvider({ children }: PropsWithChildren) {
       if (existingId && !existing) throw new Error('记录不存在');
       const title = existing?.title ?? defaultSessionTitle();
       // 文件名固定为录音 ID，prepare 前预写索引，避免崩溃留下无法关联的孤儿文件。
-      const uri = new File(Paths.document, 'Audio', `${recordingId}.aac`).uri;
+      const uri = new File(
+        Paths.document,
+        'Audio',
+        `${recordingId}${recordingOptions.extension}`,
+      ).uri;
       await db.withExclusiveTransactionAsync(async (txn) => {
         if (!existingId)
           await txn.runAsync(

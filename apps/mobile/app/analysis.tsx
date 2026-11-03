@@ -6,7 +6,7 @@ import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { processSession, deleteAIResults } from '../src/ai-processing';
 import { getDatabase } from '../src/storage/database';
 import { syncParticipants } from '../src/cloud';
-import { formatDuration } from '@pengtou/shared';
+import { formatDuration } from '@qinggairugu/shared';
 export default function Analysis() {
   const { id, chunk } = useLocalSearchParams<{ id: string; chunk?: string }>();
   const [status, setStatus] = useState('');

@@ -1,3 +1,4 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { sessionIdFromRoute } from '../../lib/session-route';
 import { useState, useRef } from 'react';
 import { View, Text, Input, Button, Switch } from '@tarojs/components';
@@ -7,7 +8,7 @@ import {
   type Profile,
   type PersonalEntry,
   type CloudSession,
-} from '@pengtou/contracts';
+} from '@qinggairugu/contracts';
 import { login, request, currentSessionId, message } from '../../lib/api';
 const fields: [keyof Profile, string][] = [
   ['name', '名字 / 昵称'],
@@ -22,6 +23,7 @@ const fields: [keyof Profile, string][] = [
   ['publicLink', '公开账号链接'],
 ];
 export default function ProfilePage() {
+  usePageShare();
   const [profile, setProfile] = useState<Profile>({
     name: '',
     introduction: '',

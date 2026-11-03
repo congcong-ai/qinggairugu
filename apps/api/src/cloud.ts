@@ -22,8 +22,8 @@ import {
   joinSessionSchema,
   publishRecapSchema,
   profileSchema,
-} from '@pengtou/contracts';
-import { type Database, schema, eq, and, gt, sql } from '@pengtou/database';
+} from '@qinggairugu/contracts';
+import { type Database, schema, eq, and, gt, sql } from '@qinggairugu/database';
 const hash = (value: string) =>
   createHash('sha256').update(value).digest('hex');
 interface Config {
@@ -88,6 +88,30 @@ export function createCloudApp(db: Database, config: Config) {
         )
       )
         actor = { kind: 'device', id: device.id };
+    }
+    if (
+      actor?.kind === 'user' &&
+      deviceId &&
+      secret &&
+      z.uuid().safeParse(deviceId).success
+    ) {
+      const [device] = await db
+        .select()
+        .from(schema.installations)
+        .where(eq(schema.installations.id, deviceId));
+      if (!device || device.secretHash !== hash(secret)) actor = null;
+      else {
+        const binding = await userIdFor(db, { kind: 'device', id: deviceId });
+        if (binding !== actor.id) actor = null;
+        else actor = { kind: 'device', id: deviceId };
+      }
+    }
+    if (actor?.kind === 'device' && !token) {
+      const [device] = await db
+        .select()
+        .from(schema.installations)
+        .where(eq(schema.installations.id, actor.id));
+      if (device?.accountRequired) actor = null;
     }
     c.set('actor', actor);
     await next();
@@ -177,9 +201,48 @@ export function createCloudApp(db: Database, config: Config) {
         userId,
         expiresAt: new Date(Date.now() + 7 * 86400000),
       });
-      return c.json({ token, userId });
+      return c.json({
+        token,
+        userId,
+        crossPlatformReady: !!(unionid && config.wechatOpenPlatformId),
+      });
     });
   }
+  app.post('/auth/device', async (c) => {
+    const actor = c.get('actor');
+    if (actor?.kind !== 'user') return c.json({ error: '请先微信登录' }, 401);
+    const input = z
+      .object({ id: z.uuid(), secret: z.string().regex(/^[a-f0-9]{64}$/) })
+      .strict()
+      .parse(await c.req.json());
+    const ok = await db.transaction(async (tx) => {
+      const devices = await tx
+        .select()
+        .from(schema.installations)
+        .where(eq(schema.installations.id, input.id))
+        .for('update');
+      if (devices[0]?.secretHash !== hash(input.secret)) return false;
+      const history = await tx
+        .select()
+        .from(schema.bindings)
+        .where(eq(schema.bindings.installationId, input.id));
+      if (history.some((b) => b.userId !== actor.id)) return false;
+      if (!history.some((b) => !b.revokedAt))
+        await tx.insert(schema.bindings).values({
+          id: randomUUID(),
+          installationId: input.id,
+          userId: actor.id,
+        });
+      await tx
+        .update(schema.installations)
+        .set({ accountRequired: true })
+        .where(eq(schema.installations.id, input.id));
+      return true;
+    });
+    return ok
+      ? c.json({ connected: true })
+      : c.json({ error: '设备历史归属冲突，不能自动认领' }, 409);
+  });
   app.post('/auth/logout', async (c) => {
     if (c.get('actor')?.kind !== 'user')
       return c.json({ error: '请先登录' }, 401);

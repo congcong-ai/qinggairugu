@@ -1,8 +1,10 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { useState } from 'react';
 import { View, Text, Button } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import { login, request, setSessionId, message } from '../../lib/api';
 export default function Sessions() {
+  usePageShare();
   const [rows, setRows] = useState<
     {
       id: string;

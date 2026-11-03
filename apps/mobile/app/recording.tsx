@@ -6,8 +6,8 @@ import { Text, View, Image } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { useRecording } from '../src/recording-context';
-import { formatDuration } from '@pengtou/shared';
-import { colors } from '@pengtou/design-tokens';
+import { formatDuration } from '@qinggairugu/shared';
+import { colors } from '@qinggairugu/design-tokens';
 export default function Recording() {
   const recording = useRecording();
   const started = useRef(false);

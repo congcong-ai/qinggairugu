@@ -1,2 +1,2 @@
 import { defineConfig } from 'tsup';
-export default defineConfig({ noExternal: [/^@pengtou\//], clean: true });
+export default defineConfig({ noExternal: [/^@qinggairugu\//], clean: true });

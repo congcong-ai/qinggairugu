@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { beforeAll, afterAll, it, expect, vi } from 'vitest';
 import { migrate, type MigrationDatabase } from './storage/migrations';
-import { bailianConfig } from '@pengtou/ai';
+import { bailianConfig } from '@qinggairugu/ai';
 vi.mock('expo-file-system', () => ({ File: class {} }));
 vi.mock('expo/fetch', () => ({ fetch: vi.fn() }));
 vi.mock('./ai-key', () => ({ readAIKey: async () => null }));

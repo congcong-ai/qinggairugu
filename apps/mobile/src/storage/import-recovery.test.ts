@@ -15,7 +15,7 @@ import { recoverAudioImports, type RecoveryDatabase } from './import-recovery';
 import { migrate, type MigrationDatabase } from './migrations';
 it('重启恢复完整导入；大小正确但摘要不符、缺失和半段副本均拒绝完成，不删除文件', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'qinggai-import-'));
-  const db = new DatabaseSync(join(dir, 'pengtou.db'));
+  const db = new DatabaseSync(join(dir, 'qinggairugu.db'));
   const adapter: MigrationDatabase & RecoveryDatabase = {
     async execAsync(sql: string) {
       db.exec(sql);

@@ -1,5 +1,5 @@
 {
-  "name": "@pengtou/shared",
+  "name": "@qinggairugu/shared",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -11,6 +11,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@pengtou/contracts": "workspace:*"
+    "@qinggairugu/contracts": "workspace:*"
   }
 }

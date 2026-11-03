@@ -1,11 +1,21 @@
 import { LocalMediaNotice } from '../../src/local-media-notice';
 import { router } from 'expo-router';
-import { Text } from 'react-native';
+import { Platform, Text } from 'react-native';
 import { Page, Heading, Card, Action, styles } from '../../src/ui';
 export default function Screen() {
   return (
     <Page>
       <Heading title="我的" subtitle="你的记录，由你掌握。" />
+      <Action
+        secondary
+        label={Platform.OS === 'android' ? '我的账号 · 微信登录' : '我的账号'}
+        onPress={() => router.push('/account')}
+      />
+      <Action
+        secondary
+        label="先看看示例 · 无需登录"
+        onPress={() => router.push('/example')}
+      />
       <LocalMediaNotice />
       <Card>
         <Text style={styles.body}>

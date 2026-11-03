@@ -1,4 +1,11 @@
-import { type Database, schema, eq, and, isNull, or } from '@pengtou/database';
+import {
+  type Database,
+  schema,
+  eq,
+  and,
+  isNull,
+  or,
+} from '@qinggairugu/database';
 export type Actor =
   { kind: 'device'; id: string } | { kind: 'user'; id: string };
 export async function activeBinding(

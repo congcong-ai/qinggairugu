@@ -31,7 +31,7 @@ pnpm test
 ```bash
 export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 export PATH="$ANDROID_HOME/platform-tools:$PATH"
-pnpm --filter @pengtou/mobile android:prebuild
+pnpm --filter @qinggairugu/mobile android:prebuild
 pnpm android
 ```
 
@@ -43,8 +43,8 @@ pnpm android
 
 ```bash
 cp .env.example .env
-createdb pengtou
-pnpm --filter @pengtou/database migrate
+createdb qinggairugu
+pnpm --filter @qinggairugu/database migrate
 pnpm dev:api
 ```
 
@@ -59,7 +59,7 @@ Mobile 的 `EXPO_PUBLIC_API_URL` 放在 `apps/mobile/.env`（已忽略）；正�
 ## 构建安装包
 
 ```bash
-pnpm --filter @pengtou/mobile android:prebuild
+pnpm --filter @qinggairugu/mobile android:prebuild
 cd apps/mobile/android
 ./gradlew :app:assembleDebug :app:assembleRelease :app:bundleRelease -PreactNativeArchitectures=arm64-v8a
 ```

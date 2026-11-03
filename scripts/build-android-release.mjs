@@ -22,10 +22,10 @@ const signingFile =
   resolve(homedir(), '.config/qinggai/signing/release.env');
 const signing = parseEnv(readFileSync(signingFile, 'utf8'));
 for (const key of [
-  'PENGTOU_KEYSTORE_FILE',
-  'PENGTOU_KEYSTORE_PASSWORD',
-  'PENGTOU_KEY_ALIAS',
-  'PENGTOU_KEY_PASSWORD',
+  'QINGGAIRUGU_KEYSTORE_FILE',
+  'QINGGAIRUGU_KEYSTORE_PASSWORD',
+  'QINGGAIRUGU_KEY_ALIAS',
+  'QINGGAIRUGU_KEY_PASSWORD',
 ]) {
   if (!signing[key]) throw new Error(`签名配置缺少 ${key}`);
 }

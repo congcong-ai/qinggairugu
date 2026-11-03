@@ -1,6 +1,8 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { View, Text } from '@tarojs/components';
 import { AppGuide } from '../../components/app-guide';
 export default function About() {
+  usePageShare();
   return (
     <View className="page">
       <Text className="title">倾盖如故</Text>

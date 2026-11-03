@@ -1,0 +1,1 @@
+{"private": true, "scripts": {"check": "npx -y hyperframes@0.8.221 check", "render": "npx -y hyperframes@0.8.221 render --workers 1 --output review.mp4"}}

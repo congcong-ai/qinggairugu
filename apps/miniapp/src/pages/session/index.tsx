@@ -1,10 +1,11 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { SessionNote } from '../../components/session-note';
 import { SessionNav } from '../../components/session-nav';
 import { sessionIdFromRoute } from '../../lib/session-route';
 import { useState, useRef } from 'react';
 import { View, Text, Button, Image } from '@tarojs/components';
 import Taro, { useLoad, useDidShow, useDidHide, useUnload } from '@tarojs/taro';
-import type { CloudSession, Profile } from '@pengtou/contracts';
+import type { CloudSession, Profile } from '@qinggairugu/contracts';
 import {
   currentSessionId,
   setSessionId,
@@ -25,6 +26,7 @@ export default function SessionPage() {
   const [qr, setQr] = useState('');
   const [qrError, setQrError] = useState('');
   const ownSession = useRef('');
+  usePageShare(() => ({ id: ownSession.current, title: session?.title }));
   const generation = useRef(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   async function refresh() {
@@ -143,6 +145,11 @@ export default function SessionPage() {
             </Button>
           )}
         </View>
+      )}
+      {session && (
+        <Button className="row-button button" openType="share">
+          分享这场给朋友
+        </Button>
       )}
       {session && !session.isOrganizer && !session.isMember && (
         <Button

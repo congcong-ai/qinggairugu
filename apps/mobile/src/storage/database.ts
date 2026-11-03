@@ -1,3 +1,4 @@
+import { storageScope } from '../account-store';
 import { recoverAudioImports } from './import-recovery';
 import { activeAIJobs, activeAudioImports } from '../activity';
 import {
@@ -25,11 +26,15 @@ export interface LocalRecording {
   source?: string;
   import_state?: string;
 }
-let database: Promise<SQLiteDatabase> | undefined;
+const databases = new Map<string, Promise<SQLiteDatabase>>();
 export let nativeVectorAvailable = false;
-export function getDatabase() {
+export async function getDatabase() {
+  const scope = await storageScope();
+  let database = databases.get(scope);
   database ??= (async () => {
-    const db = await openDatabaseAsync('pengtou.db');
+    const db = await openDatabaseAsync(
+      scope === 'legacy' ? 'qinggairugu.db' : `qinggairugu-${scope}.db`,
+    );
     await migrate(db);
     await protectCachedRecordings(db);
     const extension = bundledExtensions['sqlite-vec'];
@@ -49,9 +54,10 @@ export function getDatabase() {
     await recoverAudioImports(db, (uri) => new File(uri));
     return db;
   })().catch((error) => {
-    database = undefined;
+    databases.delete(scope);
     throw error;
   });
+  databases.set(scope, database);
   return database;
 }
 export async function listSessions() {

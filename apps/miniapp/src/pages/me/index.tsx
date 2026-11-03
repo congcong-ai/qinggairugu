@@ -1,6 +1,8 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { View, Text, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 export default function Me() {
+  usePageShare();
   const rows = [
     ['我的整理结果', '仅自己可见', '/pages/activity/results'],
     ['关联我的 App', '', '/pages/binding/index'],

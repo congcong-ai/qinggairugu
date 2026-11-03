@@ -1,13 +1,26 @@
 import Taro from '@tarojs/taro';
 declare const API_BASE: string;
 declare const DEV_AUTH: boolean;
+// 原小程序仍使用同一 AppID：首次读取时复制旧存储键，避免改名丢失身份和当前活动。
+function readStorage(key: string): string {
+  const current = Taro.getStorageSync<string>(key);
+  if (current) return current;
+  const legacy = Taro.getStorageSync<string>(
+    key.replace(/^qinggairugu\./, 'pengtou.'),
+  );
+  if (legacy) {
+    Taro.setStorageSync(key, legacy);
+    Taro.removeStorageSync(key.replace(/^qinggairugu\./, 'pengtou.'));
+  }
+  return legacy || '';
+}
 // 开发身份与真实微信登录凭证隔离，切换构建后必须重新建立正确身份。
-const tokenKey = DEV_AUTH ? 'pengtou.devToken' : 'pengtou.wechatToken';
+const tokenKey = DEV_AUTH ? 'qinggairugu.devToken' : 'qinggairugu.wechatToken';
 export function currentSessionId() {
-  return Taro.getStorageSync<string>('pengtou.session') || '';
+  return readStorage('qinggairugu.session') || '';
 }
 export function setSessionId(id: string) {
-  Taro.setStorageSync('pengtou.session', id);
+  Taro.setStorageSync('qinggairugu.session', id);
 }
 export async function request<T>(
   path: string,
@@ -15,7 +28,7 @@ export async function request<T>(
   data?: unknown,
   retry = true,
 ): Promise<T> {
-  const token = Taro.getStorageSync<string>(tokenKey);
+  const token = readStorage(tokenKey);
   const response = await Taro.request<{ error?: string }>({
     url: API_BASE + path,
     method,
@@ -35,14 +48,14 @@ export async function request<T>(
 }
 let loginPromise: Promise<void> | undefined;
 export function login() {
-  if (Taro.getStorageSync(tokenKey)) return Promise.resolve();
+  if (readStorage(tokenKey)) return Promise.resolve();
   loginPromise ??= (async () => {
     let code: string;
     if (DEV_AUTH) {
-      let identity = Taro.getStorageSync<string>('pengtou.devIdentity');
+      let identity = readStorage('qinggairugu.devIdentity');
       if (!identity) {
         identity = `dev:${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        Taro.setStorageSync('pengtou.devIdentity', identity);
+        Taro.setStorageSync('qinggairugu.devIdentity', identity);
       }
       code = identity;
     } else code = (await Taro.login()).code;

@@ -1,6 +1,6 @@
 import { defineConfig } from '@tarojs/cli';
 export default defineConfig({
-  projectName: 'pengtou',
+  projectName: 'qinggairugu',
   defineConstants: {
     API_BASE: JSON.stringify(
       process.env.TARO_APP_API_URL || 'http://127.0.0.1:9001',

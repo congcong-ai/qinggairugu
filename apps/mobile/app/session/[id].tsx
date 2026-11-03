@@ -16,7 +16,7 @@ import {
   confirmInterruptedRecording,
   type LocalRecording,
 } from '../../src/storage/database';
-import { formatDuration } from '@pengtou/shared';
+import { formatDuration } from '@qinggairugu/shared';
 function Playback({
   recording,
   reload,

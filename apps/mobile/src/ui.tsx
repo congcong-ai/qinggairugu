@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@pengtou/design-tokens';
+import { colors } from '@qinggairugu/design-tokens';
 export function Page({ children }: PropsWithChildren) {
   const path = usePathname();
   const back = !['/', '/records', '/people', '/me', '/recording'].includes(

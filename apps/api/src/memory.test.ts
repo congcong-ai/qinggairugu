@@ -1,7 +1,7 @@
 import { beforeAll, afterAll, describe, it, expect } from 'vitest';
 import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { connectDatabase, postgres } from '@pengtou/database';
+import { connectDatabase, postgres } from '@qinggairugu/database';
 import { migrateCloud } from '../../../packages/database/src/migrate';
 import { createCloudApp } from './cloud';
 const base = process.env.TEST_DATABASE_URL;
@@ -93,7 +93,7 @@ describe.skipIf(!base)('v0.2 真实 PostgreSQL 迁移及权限', () => {
         ).json()
       ).recap.content,
     ).toBe('历史已发布回顾');
-    await connection.sql`UPDATE pengtou_migrations SET checksum='bad' WHERE version=1`;
+    await connection.sql`UPDATE qinggairugu_migrations SET checksum='bad' WHERE version=1`;
     await expect(migrateCloud(connection.sql)).rejects.toThrow(
       '已执行迁移不能修改',
     );
@@ -104,7 +104,7 @@ describe.skipIf(!base)('v0.2 真实 PostgreSQL 迁移及权限', () => {
       ),
       'utf8',
     );
-    await connection.sql`UPDATE pengtou_migrations SET checksum=${createHash('sha256').update(source).digest('hex')} WHERE version=1`;
+    await connection.sql`UPDATE qinggairugu_migrations SET checksum=${createHash('sha256').update(source).digest('hex')} WHERE version=1`;
   });
   it('小程序可独立创建私人记录，严格隔离、版本冲突和删除', async () => {
     const id = randomUUID();

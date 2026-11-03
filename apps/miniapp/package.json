@@ -1,5 +1,5 @@
 {
-  "name": "@pengtou/miniapp",
+  "name": "@qinggairugu/miniapp",
   "private": true,
   "version": "0.1.0",
   "scripts": {
@@ -18,9 +18,9 @@
     "@tarojs/taro": "4.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@pengtou/design-tokens": "workspace:*",
-    "@pengtou/contracts": "workspace:*",
-    "@pengtou/shared": "workspace:*"
+    "@qinggairugu/design-tokens": "workspace:*",
+    "@qinggairugu/contracts": "workspace:*",
+    "@qinggairugu/shared": "workspace:*"
   },
   "devDependencies": {
     "@tarojs/cli": "4.3.0",

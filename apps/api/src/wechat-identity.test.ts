@@ -1,7 +1,7 @@
 import { resolveWechatIdentity, IdentityConflict } from './wechat-identity';
-import { beforeAll, afterAll, describe, it, expect } from 'vitest';
+import { beforeAll, afterAll, describe, it, expect, vi } from 'vitest';
 import { randomUUID, randomBytes } from 'node:crypto';
-import { connectDatabase, postgres, schema } from '@pengtou/database';
+import { connectDatabase, postgres, schema } from '@qinggairugu/database';
 import { migrateCloud } from '../../../packages/database/src/migrate';
 import { createCloudApp } from './cloud';
 const base = process.env.TEST_DATABASE_URL;
@@ -124,5 +124,142 @@ describe.skipIf(!base)('微信账号身份真实数据库验证', () => {
       (await app.request('/auth/logout', { method: 'POST', headers })).status,
     ).toBe(200);
     expect((await app.request('/me/profile', { headers })).status).toBe(401);
+  });
+  it('移动端只用独立凭据服务端换码，不向客户端返回微信令牌与UnionID', async () => {
+    const mobileApp = createCloudApp(conn.db, {
+      allowDevAuth: false,
+      wechatAppId: 'mini-id',
+      wechatAppSecret: 'mini-secret',
+      wechatMobileAppId: 'mobile-id',
+      wechatMobileAppSecret: 'mobile-secret',
+      wechatOpenPlatformId: 'verified-platform',
+    });
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          openid: 'mobile-verified',
+          unionid: 'mobile-verified-union',
+          access_token: 'provider-token',
+          refresh_token: 'provider-refresh',
+        }),
+      ),
+    );
+    try {
+      const r = await mobileApp.request('/auth/wechat/mobile', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code: 'wechat-code' }),
+      });
+      expect(r.status).toBe(200);
+      const payload = await r.json();
+      expect(Object.keys(payload).sort()).toEqual([
+        'crossPlatformReady',
+        'token',
+        'userId',
+      ]);
+      expect(payload.crossPlatformReady).toBe(true);
+      const url = new URL(String(spy.mock.calls[0]![0]));
+      expect(url.pathname).toBe('/sns/oauth2/access_token');
+      expect(url.searchParams.get('appid')).toBe('mobile-id');
+      expect(url.searchParams.get('secret')).toBe('mobile-secret');
+      expect(url.searchParams.get('code')).toBe('wechat-code');
+      expect(url.searchParams.has('js_code')).toBe(false);
+      const me = await mobileApp.request('/me/profile', {
+        headers: { authorization: 'Bearer ' + payload.token },
+      });
+      expect(me.status).toBe(200);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+  it('微信未返回UnionID时不声称跨端已打通，拒绝微信错误响应', async () => {
+    const mobileApp = createCloudApp(conn.db, {
+      allowDevAuth: false,
+      wechatMobileAppId: 'mobile-id',
+      wechatMobileAppSecret: 'mobile-secret',
+      wechatOpenPlatformId: 'verified-platform',
+    });
+    const spy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ openid: 'without-union' })),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ errcode: 40029 })));
+    const req = () =>
+      mobileApp.request('/auth/wechat/mobile', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code: 'wechat-code' }),
+      });
+    try {
+      expect((await (await req()).json()).crossPlatformReady).toBe(false);
+      expect((await req()).status).toBe(401);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+  it('账号设备连接要求两份凭据、不能换人接管，退出后设备凭据不能单独取数据', async () => {
+    const login = async (code: string) =>
+      (
+        await (
+          await app.request('/auth/wechat', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ code: 'dev:' + code }),
+          })
+        ).json()
+      ).token as string;
+    const a = await login('account-device-a'),
+      b = await login('account-device-b');
+    const id = randomUUID(),
+      secret = 'a'.repeat(64);
+    const post = (path: string, token: string | null, data: unknown) =>
+      app.request(path, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { authorization: 'Bearer ' + token } : {}),
+        },
+        body: JSON.stringify(data),
+      });
+    expect((await post('/installations', null, { id, secret })).status).toBe(
+      201,
+    );
+    expect((await post('/auth/device', null, { id, secret })).status).toBe(401);
+    expect(
+      (await post('/auth/device', a, { id, secret: 'b'.repeat(64) })).status,
+    ).toBe(409);
+    expect((await post('/auth/device', a, { id, secret })).status).toBe(200);
+    expect((await post('/auth/device', a, { id, secret })).status).toBe(200);
+    expect((await post('/auth/device', b, { id, secret })).status).toBe(409);
+    const deviceHeaders = {
+      'x-installation-id': id,
+      'x-installation-secret': secret,
+    };
+    expect(
+      (await app.request('/me/profile', { headers: deviceHeaders })).status,
+    ).toBe(401);
+    expect(
+      (
+        await app.request('/me/profile', {
+          headers: { ...deviceHeaders, authorization: 'Bearer ' + a },
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await app.request('/me/profile', {
+          headers: { ...deviceHeaders, authorization: 'Bearer ' + b },
+        })
+      ).status,
+    ).toBe(401);
+    expect((await post('/auth/logout', a, {})).status).toBe(200);
+    expect(
+      (
+        await app.request('/me/profile', {
+          headers: { ...deviceHeaders, authorization: 'Bearer ' + a },
+        })
+      ).status,
+    ).toBe(401);
   });
 });

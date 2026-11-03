@@ -1,9 +1,11 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { useState, useRef } from 'react';
 import { View, Text, Input, Button, Switch, Picker } from '@tarojs/components';
 import Taro, { useLoad } from '@tarojs/taro';
-import type { CloudSession } from '@pengtou/contracts';
+import type { CloudSession } from '@qinggairugu/contracts';
 import { login, request, message, setSessionId } from '../../lib/api';
 export default function Create() {
+  usePageShare();
   const stableId = useRef('');
   const editing = useRef(false);
   const lock = useRef(false);

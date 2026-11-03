@@ -87,6 +87,7 @@ export function androidSourceHash(root, config, api) {
     'apps/mobile/src',
     'apps/mobile/assets',
     'apps/mobile/plugins',
+    'apps/mobile/native',
     'patches',
     ...['ai', 'contracts', 'shared', 'design-tokens', 'config'].map(
       (name) => `packages/${name}`,

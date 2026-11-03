@@ -21,26 +21,26 @@ module.exports = function withAndroidRelease(config) {
       '// 倾盖如故正式签名：缺少配置时生成未签名包，绝不冒用 debug 签名。';
     if (
       !result.modResults.contents.includes(
-        "def pengtouStore = System.getenv('PENGTOU_KEYSTORE_FILE')",
+        "def qinggairuguStore = System.getenv('QINGGAIRUGU_KEYSTORE_FILE')",
       )
     )
       result.modResults.contents += `
 ${marker}
-def pengtouStore = System.getenv('PENGTOU_KEYSTORE_FILE')
+def qinggairuguStore = System.getenv('QINGGAIRUGU_KEYSTORE_FILE')
 android {
     signingConfigs {
-        if (pengtouStore) {
-            pengtouRelease {
-                storeFile file(pengtouStore)
-                storePassword System.getenv('PENGTOU_KEYSTORE_PASSWORD')
-                keyAlias System.getenv('PENGTOU_KEY_ALIAS')
-                keyPassword System.getenv('PENGTOU_KEY_PASSWORD')
+        if (qinggairuguStore) {
+            qinggairuguRelease {
+                storeFile file(qinggairuguStore)
+                storePassword System.getenv('QINGGAIRUGU_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('QINGGAIRUGU_KEY_ALIAS')
+                keyPassword System.getenv('QINGGAIRUGU_KEY_PASSWORD')
             }
         }
     }
     buildTypes {
         release {
-            signingConfig pengtouStore ? signingConfigs.pengtouRelease : null
+            signingConfig qinggairuguStore ? signingConfigs.qinggairuguRelease : null
         }
     }
 }

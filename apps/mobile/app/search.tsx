@@ -3,7 +3,7 @@ import { Text, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { askLocal } from '../src/ai-processing';
-import { formatDuration } from '@pengtou/shared';
+import { formatDuration } from '@qinggairugu/shared';
 export default function Search() {
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);

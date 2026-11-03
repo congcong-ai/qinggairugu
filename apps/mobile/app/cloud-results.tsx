@@ -3,7 +3,7 @@ import { Text } from 'react-native';
 import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Page, Heading, Card, styles } from '../src/ui';
 import { cloudRequest } from '../src/cloud';
-import type { PrivateAIInput } from '@pengtou/contracts';
+import type { PrivateAIInput } from '@qinggairugu/contracts';
 export default function Results() {
   const { activityId } = useLocalSearchParams<{ activityId: string }>();
   const [items, setItems] = useState<(PrivateAIInput & { id: string })[]>([]);

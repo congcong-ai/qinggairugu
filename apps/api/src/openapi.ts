@@ -8,7 +8,7 @@ import {
   entrySchema,
   updateEntrySchema,
   privateAISchema,
-} from '@pengtou/contracts';
+} from '@qinggairugu/contracts';
 const device = [{ installationId: [], installationSecret: [] }];
 const user = [{ bearer: [] }];
 const either = [...device, ...user];
@@ -82,6 +82,25 @@ export const openapi = {
           ...responses,
           '409': { description: '已有账号冲突，禁止自动合并' },
           '503': { description: '移动应用微信凭据未配置' },
+        },
+      },
+    },
+    '/auth/device': {
+      post: {
+        summary: '微信登录后连接当前账号的来源设备，不自动接管其他账号历史',
+        security: user,
+        requestBody: jsonBody({
+          type: 'object',
+          additionalProperties: false,
+          required: ['id', 'secret'],
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            secret: { type: 'string', pattern: '^[a-f0-9]{64}$' },
+          },
+        }),
+        responses: {
+          ...responses,
+          '409': { description: '设备凭据或历史归属冲突' },
         },
       },
     },

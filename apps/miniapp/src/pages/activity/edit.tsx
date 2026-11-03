@@ -1,9 +1,10 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { StarterCode } from '../../components/starter-code';
-import { localDateInput, dateInputToISOString } from '@pengtou/shared';
+import { localDateInput, dateInputToISOString } from '@qinggairugu/shared';
 import { useState } from 'react';
 import { View, Text, Input, Textarea, Button } from '@tarojs/components';
 import Taro, { useLoad } from '@tarojs/taro';
-import type { PersonalEntry } from '@pengtou/contracts';
+import type { PersonalEntry } from '@qinggairugu/contracts';
 import { login, request, message } from '../../lib/api';
 import { AppGuide } from '../../components/app-guide';
 const uuid = () =>
@@ -12,6 +13,7 @@ const uuid = () =>
     return (c === 'x' ? r : (r & 3) | 8).toString(16);
   });
 export default function Entry() {
+  usePageShare();
   const [role, setRole] = useState('');
   const [id, setId] = useState('');
   const [version, setVersion] = useState(0);

@@ -1,8 +1,10 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { useState } from 'react';
 import { View, Text, Input, Button } from '@tarojs/components';
 import Taro, { useLoad, useDidShow } from '@tarojs/taro';
 import { login, request, message } from '../../lib/api';
 export default function Binding() {
+  usePageShare();
   const [code, setCode] = useState('');
   const [status, setStatus] = useState('');
   const [rows, setRows] = useState<{ id: string; installationId: string }[]>(

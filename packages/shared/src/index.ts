@@ -1,4 +1,4 @@
-import type { SessionState } from '@pengtou/contracts';
+import type { SessionState } from '@qinggairugu/contracts';
 const transitions: Record<SessionState, readonly SessionState[]> = {
   ready: ['recording'],
   recording: ['paused', 'completed', 'interrupted'],

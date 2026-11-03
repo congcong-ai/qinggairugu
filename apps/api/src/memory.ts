@@ -9,13 +9,13 @@ import {
   isNull,
   desc,
   sql,
-} from '@pengtou/database';
+} from '@qinggairugu/database';
 import {
   entrySchema,
   updateEntrySchema,
   privateAISchema,
   type ActivityItem,
-} from '@pengtou/contracts';
+} from '@qinggairugu/contracts';
 import {
   activeBinding,
   userIdFor,

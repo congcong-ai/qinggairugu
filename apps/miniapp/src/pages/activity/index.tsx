@@ -1,9 +1,11 @@
+import { usePageShare } from '../../lib/use-page-share';
 import { useState } from 'react';
 import { View, Text, Button } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
-import type { ActivityItem } from '@pengtou/contracts';
+import type { ActivityItem } from '@qinggairugu/contracts';
 import { login, request, message, setSessionId } from '../../lib/api';
 export default function Activities() {
+  usePageShare();
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [next, setNext] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);

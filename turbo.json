@@ -12,22 +12,22 @@
       "cache": false,
       "persistent": true
     },
-    "@pengtou/ai#build": {
+    "@qinggairugu/ai#build": {
       "outputs": []
     },
-    "@pengtou/contracts#build": {
+    "@qinggairugu/contracts#build": {
       "outputs": []
     },
-    "@pengtou/database#build": {
+    "@qinggairugu/database#build": {
       "outputs": []
     },
-    "@pengtou/shared#build": {
+    "@qinggairugu/shared#build": {
       "outputs": []
     },
-    "@pengtou/design-tokens#build": {
+    "@qinggairugu/design-tokens#build": {
       "outputs": []
     },
-    "@pengtou/config#build": {
+    "@qinggairugu/config#build": {
       "outputs": []
     }
   }
