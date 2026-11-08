@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Text, TextInput } from 'react-native';
-import { Page, Heading, Card, Action, styles } from '../src/ui';
+import { Text, View, Pressable } from 'react-native';
+import { Page, Heading, Card, Action, Field, styles } from '../src/ui';
 import { exampleSession, searchExample } from '../src/example-experience';
 export default function ExampleExperience() {
   const [view, setView] = useState<
@@ -21,22 +21,40 @@ export default function ExampleExperience() {
           Key；云端加入和同步仍需微信授权。
         </Text>
       </Card>
-      <Text style={styles.label}>{exampleSession.title}</Text>
-      {(
-        [
-          ['summary', '整理结果'],
-          ['transcript', '发言人与原文'],
-          ['search', '搜索与来源'],
-          ['recap', '共享回顾草稿'],
-        ] as const
-      ).map(([key, label]) => (
-        <Action
-          key={key}
-          secondary
-          label={`${view === key ? '✓ ' : ''}${label}`}
-          onPress={() => setView(key)}
-        />
-      ))}
+      <Text accessibilityRole="header" style={styles.label}>
+        {exampleSession.title}
+      </Text>
+      <View accessibilityRole="tablist" style={styles.exampleTabs}>
+        {(
+          [
+            ['summary', '整理结果'],
+            ['transcript', '发言人与原文'],
+            ['search', '搜索与来源'],
+            ['recap', '共享回顾草稿'],
+          ] as const
+        ).map(([key, label]) => (
+          <Pressable
+            key={key}
+            accessibilityRole="tab"
+            accessibilityLabel={label}
+            accessibilityState={{ selected: view === key }}
+            onPress={() => setView(key)}
+            style={[
+              styles.exampleTab,
+              view === key && styles.exampleTabSelected,
+            ]}
+          >
+            <Text
+              style={[
+                styles.exampleTabText,
+                view === key && styles.exampleTabTextSelected,
+              ]}
+            >
+              {label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
       {view === 'summary' && (
         <>
           <Card>
@@ -70,13 +88,12 @@ export default function ExampleExperience() {
       {view === 'search' && (
         <>
           <Card>
-            <Text style={styles.label}>在示例原文中找一找</Text>
-            <TextInput
-              accessibilityLabel="搜索示例"
-              style={{ fontSize: 20, minHeight: 60 }}
+            <Field
+              label="在示例原文中找一找"
               value={query}
               onChangeText={setQuery}
               maxLength={200}
+              style={{ minHeight: 60, fontSize: 18 }}
               placeholder="例如：锁屏录音、试用、行动安排"
             />
             <Action

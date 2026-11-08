@@ -14,9 +14,9 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          paddingTop: 8,
-          paddingBottom: 8,
-          minHeight: 64,
+          paddingTop: 7,
+          paddingBottom: 6,
+          minHeight: 68,
         },
       }}
     >
@@ -31,6 +31,7 @@ export default function TabsLayout() {
           name={name!}
           options={{
             title,
+            tabBarAccessibilityLabel: String(title),
             tabBarIcon: ({ color }) => (
               <Image
                 source={icon}

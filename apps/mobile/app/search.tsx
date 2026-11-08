@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Text, TextInput } from 'react-native';
+import { Text } from 'react-native';
 import { router } from 'expo-router';
-import { Page, Heading, Card, Action, styles } from '../src/ui';
+import { Page, Heading, Card, Action, Field, styles } from '../src/ui';
 import { askLocal } from '../src/ai-processing';
 import { formatDuration } from '@qinggairugu/shared';
 export default function Search() {
@@ -27,14 +27,19 @@ export default function Search() {
     <Page>
       <Heading title="问倾盖如故" subtitle="找回那些聊过的事。" />
       <Card>
-        <TextInput
-          accessibilityLabel="想问什么"
+        <Field
+          label="想找回什么？"
           placeholder="之前在哪场聊过 AI 硬件？"
           value={query}
-          onChangeText={setQuery}
+          editable={!busy}
+          onChangeText={(value) => {
+            setQuery(value);
+            if (result) setResult(null);
+            setError('');
+          }}
           maxLength={500}
           multiline
-          style={{ fontSize: 20, minHeight: 80 }}
+          style={{ minHeight: 92, fontSize: 18 }}
         />
         <Action
           label={busy ? '正在找…' : '找一找'}
@@ -44,6 +49,11 @@ export default function Search() {
         <Text style={styles.caption}>
           仅搜索本机历史。问题和检索到的片段将由你配置的百炼服务生成回答。
         </Text>
+        <Action
+          secondary
+          label="管理百炼 Key"
+          onPress={() => router.push('/ai-settings')}
+        />
       </Card>
       {!result && !query && (
         <Card>
@@ -58,7 +68,11 @@ export default function Search() {
           ))}
         </Card>
       )}
-      {error && <Text style={styles.body}>{error}</Text>}
+      {error && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {error}
+        </Text>
+      )}
       {result && (
         <Card>
           <Text style={styles.body}>{result.answer}</Text>

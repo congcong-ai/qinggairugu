@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Text, TextInput } from 'react-native';
+import { Platform, Text } from 'react-native';
 import { router } from 'expo-router';
-import { Page, Heading, Card, Action, styles } from '../src/ui';
+import { Page, Heading, Card, Action, Field, styles } from '../src/ui';
 import { bindingStatus, cloudRequest, openCloudActivity } from '../src/cloud';
 import type { CloudSession } from '@qinggairugu/contracts';
 export default function JoinActivity() {
@@ -12,8 +12,15 @@ export default function JoinActivity() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   async function preview() {
+    if (busy) return;
     setBusy(true);
+    setError('');
+    setSession(null);
     try {
+      if (Platform.OS !== 'android')
+        throw new Error(
+          '目前 iOS 版尚未开放微信连接；请在微信小程序中扫码加入。',
+        );
       const b = await bindingStatus();
       if (!b.userId)
         throw new Error(
@@ -31,6 +38,7 @@ export default function JoinActivity() {
   async function join() {
     if (!session) return;
     setBusy(true);
+    setError('');
     try {
       await cloudRequest(`/sessions/${session.id}/join`, 'POST', {
         profile: { name, introduction: intro },
@@ -50,13 +58,26 @@ export default function JoinActivity() {
         title="加入这场"
         subtitle="我是参与者 · 也可以先用微信扫码加入"
       />
-      <TextInput
+      <Field
+        label="活动编号或邀请链接"
         value={input}
         onChangeText={setInput}
         placeholder="活动编号或邀请链接"
-        style={styles.body}
+        autoCapitalize="none"
+        autoCorrect={false}
       />
-      <Action label="查看这场" disabled={busy} onPress={() => void preview()} />
+      <Action
+        label={busy ? '正在查找…' : '查看这场'}
+        disabled={busy || !input.trim()}
+        onPress={() => void preview()}
+      />
+      {Platform.OS === 'android' && !session && (
+        <Action
+          secondary
+          label="关联我的小程序"
+          onPress={() => router.push('/binding')}
+        />
+      )}
       {session && (
         <Card>
           <Text style={styles.label}>{session.title}</Text>
@@ -65,26 +86,36 @@ export default function JoinActivity() {
               ? '加入后资料对本场参与者可见'
               : '加入后资料仅发起者可见'}
           </Text>
-          <TextInput
+          <Text style={styles.caption}>
+            你填写的信息只用于这场活动，并按本场可见范围向相关人员展示。
+          </Text>
+          <Field
+            label="名字 / 昵称"
             value={name}
             onChangeText={setName}
-            placeholder="名字 / 昵称"
-            style={styles.body}
+            placeholder="希望大家怎么称呼你？"
+            autoComplete="name"
           />
-          <TextInput
+          <Field
+            label="一句话介绍"
             value={intro}
             onChangeText={setIntro}
             placeholder="一句话介绍"
-            style={styles.body}
+            multiline
+            maxLength={240}
           />
           <Action
-            label="确认资料并加入"
+            label={busy ? '正在加入…' : '确认资料并加入'}
             disabled={busy || !name.trim() || !intro.trim()}
             onPress={() => void join()}
           />
         </Card>
       )}
-      <Text style={styles.caption}>{error}</Text>
+      {!!error && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {error}
+        </Text>
+      )}
     </Page>
   );
 }

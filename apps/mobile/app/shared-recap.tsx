@@ -1,15 +1,18 @@
 import { useCallback, useState } from 'react';
 import { Text } from 'react-native';
 import { useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { Page, Heading, Card, styles } from '../src/ui';
+import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { cloudRequest, cloudSessionId } from '../src/cloud';
 export default function SharedRecap() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [content, setContent] = useState<string | null>(null);
   const [status, setStatus] = useState('正在获取本场已发布回顾…');
+  const [error, setError] = useState(false);
+  const [retry, setRetry] = useState(0);
   useFocusEffect(
     useCallback(() => {
       let live = true;
+      setError(false);
       setContent(null);
       setStatus('正在获取本场已发布回顾…');
       void cloudSessionId(id)
@@ -26,15 +29,17 @@ export default function SharedRecap() {
           );
         })
         .catch((error) => {
-          if (live)
+          if (live) {
+            setError(true);
             setStatus(
               error instanceof Error ? error.message : '暂时无法获取本场回顾',
             );
+          }
         });
       return () => {
         live = false;
       };
-    }, [id]),
+    }, [id, retry]),
   );
   return (
     <Page>
@@ -46,7 +51,21 @@ export default function SharedRecap() {
           </Text>
         </Card>
       )}
-      {!!status && <Text style={styles.caption}>{status}</Text>}
+      {!!status && (
+        <Text
+          accessibilityRole={error ? 'alert' : undefined}
+          style={error ? styles.error : styles.caption}
+        >
+          {status}
+        </Text>
+      )}
+      {error && (
+        <Action
+          secondary
+          label="重试获取回顾"
+          onPress={() => setRetry((value) => value + 1)}
+        />
+      )}
       <Text style={styles.caption}>
         这里仅显示已发布的共享文字，不包含其他人的私人心得、录音或整理结果。
       </Text>

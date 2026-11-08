@@ -3,13 +3,13 @@ import { localDateInput, dateInputToISOString } from '@qinggairugu/shared';
 import { persistPhoto } from '../src/persist-photo';
 import { LocalMediaNotice } from '../src/local-media-notice';
 import { useState, useEffect, useRef } from 'react';
-import { Text, TextInput, Alert, Image } from 'react-native';
+import { Text, Alert, Image } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { randomUUID } from 'expo-crypto';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { File, Directory, Paths } from 'expo-file-system';
-import { Page, Heading, Card, Action, styles } from '../src/ui';
+import { Page, Heading, Card, Action, Field, styles } from '../src/ui';
 import { getDatabase } from '../src/storage/database';
 import { bindingStatus, cloudRequest } from '../src/cloud';
 import type { PersonalEntry } from '@qinggairugu/contracts';
@@ -29,8 +29,13 @@ export default function Entry() {
     }[]
   >([]);
   const [status, setStatus] = useState('');
+  const [statusError, setStatusError] = useState(false);
   const [busy, setBusy] = useState(false);
   const photoLock = useRef(false);
+  function showStatus(message: string, isError = false) {
+    setStatus(message);
+    setStatusError(isError);
+  }
   useEffect(() => {
     void (async () => {
       const db = await getDatabase();
@@ -100,7 +105,7 @@ export default function Entry() {
           id,
         ),
       );
-    })().catch((e) => setStatus(e.message));
+    })().catch((e) => showStatus(e.message, true));
   }, [id, params.cloudEntryId]);
   const personValues = () =>
     people
@@ -136,7 +141,7 @@ export default function Entry() {
       );
     });
     setTitle(name);
-    setStatus('已保存在本机');
+    showStatus('已保存在本机');
     return { db, name, occurred };
   }
   async function saveCloud() {
@@ -181,9 +186,9 @@ export default function Entry() {
         b.userId,
         id,
       );
-      setStatus('已保存到本人小程序，只有你可见');
+      showStatus('已保存到本人小程序，只有你可见');
     } catch (e) {
-      setStatus(e instanceof Error ? e.message : '未完成');
+      showStatus(e instanceof Error ? e.message : '未完成', true);
     } finally {
       setBusy(false);
     }
@@ -252,14 +257,14 @@ export default function Entry() {
         // 仅清理本次压缩的缓存副本，不操作选择器提供的相册原图。
         if (source.exists) source.delete();
       }
-      setStatus('已保存独立本机副本，删除相册原图后这里仍然保留');
+      showStatus('已保存独立本机副本，删除相册原图后这里仍然保留');
       setPhotos(
         await (
           await getDatabase()
         ).getAllAsync('SELECT * FROM personal_photos WHERE session_id=?', id),
       );
     } catch (e) {
-      setStatus(e instanceof Error ? e.message : '未完成');
+      showStatus(e instanceof Error ? e.message : '未完成', true);
     } finally {
       photoLock.current = false;
       activePhotoImports.delete(String(id));
@@ -268,43 +273,64 @@ export default function Entry() {
   }
   return (
     <Page>
-      <Heading title="记一次活动" subtitle="把今天想记住的，留在手机里" />
+      <Heading title="写下这次见面" subtitle="把今天想记住的，留在手机里。" />
       <LocalMediaNotice />
       <Card>
-        {[
-          [title, setTitle, '活动名称（可选）'],
-          [date, setDate, '日期，例如 2026-10-22'],
-          [location, setLocation, '地点（可选）'],
-          [category, setCategory, '分类（可选）'],
-        ].map(([value, set, placeholder]) => (
-          <TextInput
-            key={String(placeholder)}
-            value={value as string}
-            placeholder={placeholder as string}
-            onChangeText={set as (v: string) => void}
-            style={styles.body}
-          />
-        ))}
-        <TextInput
+        <Field
+          label="这次见面叫什么？（可选）"
+          value={title}
+          placeholder="例如：周末读书会"
+          onChangeText={setTitle}
+          maxLength={120}
+          returnKeyType="next"
+        />
+        <Field
+          label="日期"
+          value={date}
+          placeholder="YYYY-MM-DD"
+          hint="按本机日期填写，例如 2026-11-08。"
+          onChangeText={setDate}
+          keyboardType="numbers-and-punctuation"
+          autoCapitalize="none"
+          maxLength={10}
+        />
+        <Field
+          label="地点（可选）"
+          value={location}
+          placeholder="例如：附近的咖啡馆"
+          onChangeText={setLocation}
+          maxLength={120}
+        />
+        <Field
+          label="分类（可选）"
+          value={category}
+          placeholder="例如：Coffee Chat、读书会"
+          onChangeText={setCategory}
+          maxLength={80}
+        />
+        <Field
+          label="今天有什么想记住的？"
           multiline
           value={notes}
           onChangeText={setNotes}
-          placeholder="今天有什么想记住的？"
+          placeholder="写下有意思的想法、后续要做的事……"
           maxLength={20000}
-          style={{ ...styles.body, minHeight: 160 }}
+          style={{ minHeight: 160 }}
         />
-        <TextInput
+        <Field
+          label="认识的人（可选）"
           multiline
           value={people}
           onChangeText={setPeople}
-          placeholder="认识的人，每行：名字：备注"
-          style={styles.body}
+          placeholder="每行一位：名字：备注"
+          hint="只保存在本机；不会自动成为公开资料。"
+          style={{ minHeight: 100 }}
         />
       </Card>
       <Action
         disabled={busy}
-        label="保存到本机"
-        onPress={() => void save().catch((e) => setStatus(e.message))}
+        label={busy ? '正在处理…' : '保存到本机'}
+        onPress={() => void save().catch((e) => showStatus(e.message, true))}
       />
       <Action
         disabled={busy}
@@ -327,6 +353,7 @@ export default function Entry() {
           <Action
             disabled={busy}
             secondary
+            destructive
             label="删除这张照片"
             onPress={() =>
               Alert.alert(
@@ -348,7 +375,7 @@ export default function Entry() {
                           p.id,
                         );
                         setPhotos((old) => old.filter((x) => x.id !== p.id));
-                      })().catch((e) => setStatus(e.message));
+                      })().catch((e) => showStatus(e.message, true));
                     },
                   },
                 ],
@@ -380,10 +407,17 @@ export default function Entry() {
             .then(() =>
               router.push({ pathname: '/session/[id]', params: { id } }),
             )
-            .catch((e) => setStatus(e.message))
+            .catch((e) => showStatus(e.message, true))
         }
       />
-      <Text style={styles.caption}>{status}</Text>
+      {!!status && (
+        <Text
+          accessibilityLiveRegion="polite"
+          style={statusError ? styles.error : styles.statusText}
+        >
+          {status}
+        </Text>
+      )}
     </Page>
   );
 }

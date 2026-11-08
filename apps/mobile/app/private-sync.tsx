@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Text, Switch, Alert, View } from 'react-native';
+import { colors } from '@qinggairugu/design-tokens';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { syncPrivateAI, revokePrivateAI, syncState } from '../src/private-sync';
@@ -13,6 +14,7 @@ export default function Sync() {
     'speakers',
   ]);
   const [status, setStatus] = useState('');
+  const [statusError, setStatusError] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     void syncState(id)
@@ -29,10 +31,14 @@ export default function Sync() {
                 : '尚未同步。',
         );
       })
-      .catch((e) => setStatus(e.message));
+      .catch((e) => {
+        setStatusError(true);
+        setStatus(e.message);
+      });
   }, [id]);
   async function run(remove = false) {
     setBusy(true);
+    setStatusError(false);
     try {
       if (remove) {
         const result = await revokePrivateAI(id);
@@ -49,6 +55,7 @@ export default function Sync() {
           : '已同步，打开本人小程序「我的整理结果」查看。',
       );
     } catch (e) {
+      setStatusError(true);
       setStatus(e instanceof Error ? e.message : '未完成');
     } finally {
       setBusy(false);
@@ -85,7 +92,20 @@ export default function Sync() {
               }
             </Text>
             <Switch
+              accessibilityLabel={
+                {
+                  summary: '同步 AI 摘要',
+                  topics: '同步主要话题',
+                  actions: '同步行动项',
+                  speakers: '同步发言人标签',
+                  transcript: '同步完整转写',
+                }[key]
+              }
+              accessibilityHint="只同步你确认勾选的文字；可随时撤销云端副本"
               value={fields.includes(key)}
+              disabled={busy}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="white"
               onValueChange={(v) =>
                 setFields((old) =>
                   v ? [...old, key] : old.filter((x) => x !== key),
@@ -111,6 +131,7 @@ export default function Sync() {
       />
       <Action
         secondary
+        destructive
         label="取消同步并删除云端副本"
         disabled={busy}
         onPress={() =>
@@ -129,7 +150,14 @@ export default function Sync() {
         label="关联我的小程序"
         onPress={() => router.push('/binding')}
       />
-      <Text style={styles.caption}>{status}</Text>
+      {!!status && (
+        <Text
+          accessibilityLiveRegion="polite"
+          style={statusError ? styles.error : styles.statusText}
+        >
+          {status}
+        </Text>
+      )}
     </Page>
   );
 }

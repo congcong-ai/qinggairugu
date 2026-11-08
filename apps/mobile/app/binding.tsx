@@ -84,6 +84,7 @@ export default function Binding() {
           </Text>
           <Action
             secondary
+            destructive
             label="解除关联"
             onPress={() =>
               Alert.alert(
@@ -109,7 +110,7 @@ export default function Binding() {
       ))}
       {!state?.bindings.length && (
         <Action
-          label="获取一次性关联码"
+          label={busy ? '正在生成…' : '生成 5 分钟有效的关联码'}
           disabled={busy}
           onPress={() => void create()}
         />
@@ -147,7 +148,11 @@ export default function Binding() {
           )}
         </Card>
       )}
-      {!!error && <Text style={styles.caption}>{error}</Text>}
+      {!!error && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {error}
+        </Text>
+      )}
     </Page>
   );
 }

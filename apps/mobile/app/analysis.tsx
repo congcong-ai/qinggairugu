@@ -4,12 +4,14 @@ import { Text, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { processSession, deleteAIResults } from '../src/ai-processing';
-import { getDatabase } from '../src/storage/database';
+import { getDatabase, recordingsForSession } from '../src/storage/database';
 import { syncParticipants } from '../src/cloud';
 import { formatDuration } from '@qinggairugu/shared';
+import { readAIKey } from '../src/ai-key';
 export default function Analysis() {
   const { id, chunk } = useLocalSearchParams<{ id: string; chunk?: string }>();
   const [status, setStatus] = useState('');
+  const [statusError, setStatusError] = useState(false);
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState('');
   const [segments, setSegments] = useState<
@@ -29,8 +31,26 @@ export default function Analysis() {
   const [source, setSource] = useState('');
   const [matching, setMatching] = useState<string | null>(null);
   const [people, setPeople] = useState<{ id: string; name: string }[]>([]);
+  const [hasRecordings, setHasRecordings] = useState(false);
+  const [recordingsReady, setRecordingsReady] = useState(false);
+  const [keyConfigured, setKeyConfigured] = useState(false);
+  const [loading, setLoading] = useState(true);
+  function showStatus(message: string, isError = false) {
+    setStatus(message);
+    setStatusError(isError);
+  }
   async function load() {
     const db = await getDatabase();
+    const [recordings, key] = await Promise.all([
+      recordingsForSession(id),
+      readAIKey(),
+    ]);
+    setHasRecordings(recordings.length > 0);
+    setRecordingsReady(
+      recordings.length > 0 &&
+        recordings.every((recording) => recording.status === 'completed'),
+    );
+    setKeyConfigured(!!key);
     const row = await db.getFirstAsync<{ content: string }>(
       "SELECT content FROM summaries WHERE session_id=? AND kind='private'",
       id,
@@ -71,19 +91,34 @@ export default function Analysis() {
         id,
       );
       setSource(source?.text ?? '');
-    }
+    } else setSource('');
   }
   useEffect(() => {
-    void load().catch(() => setStatus('读取本地结果失败'));
+    let live = true;
+    setLoading(true);
+    void load()
+      .catch(() => {
+        if (live) showStatus('读取本机结果失败，请稍后重试。', true);
+      })
+      .finally(() => {
+        if (live) setLoading(false);
+      });
+    return () => {
+      live = false;
+    };
   }, [id, chunk]);
   async function process() {
     if (busy) return;
     setBusy(true);
+    showStatus('正在准备整理…');
     try {
-      await processSession(id, setStatus);
+      await processSession(id, (message) => showStatus(message));
       await load();
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : '整理未完成，请重试');
+      showStatus(
+        error instanceof Error ? error.message : '整理未完成，请重试',
+        true,
+      );
     } finally {
       setBusy(false);
     }
@@ -129,19 +164,12 @@ export default function Analysis() {
       setMatching(null);
       await load();
     } catch {
-      setStatus('匹配未保存，请重试');
+      showStatus('匹配未保存，请重试', true);
     }
   }
 
   return (
     <Page>
-      <Action
-        secondary
-        label="同步到我的小程序"
-        onPress={() =>
-          router.push({ pathname: '/private-sync', params: { id } })
-        }
-      />
       <Heading title="这场聊了什么" subtitle="私人整理，仅保存在本机。" />
       {source && (
         <Card>
@@ -149,26 +177,86 @@ export default function Analysis() {
           <Text style={styles.body}>{source}</Text>
         </Card>
       )}
-      <Action
-        label={busy ? '正在整理…' : 'AI 整理本场'}
-        disabled={busy}
-        onPress={() =>
-          Alert.alert(
-            '使用百炼整理本场？',
-            '录音将从手机直接发送给你的百炼服务。临时音频会由百炼按其保留规则处理。',
-            [
-              { text: '取消', style: 'cancel' },
-              { text: '开始整理', onPress: () => void process() },
-            ],
-          )
-        }
-      />
-      {status && <Text style={styles.body}>{status}</Text>}
-      <Action
-        secondary
-        label="配置 AI 服务"
-        onPress={() => router.push('/ai-settings')}
-      />
+      {loading && <Text style={styles.caption}>正在读取本机整理状态…</Text>}
+      {!loading && !hasRecordings && (
+        <Card>
+          <Text style={styles.label}>先留下一段录音</Text>
+          <Text style={styles.body}>
+            这场还没有录音。录音保存在本机，之后可以再回来整理。
+          </Text>
+          <Action
+            label="查看本场录音"
+            onPress={() =>
+              router.push({ pathname: '/session/[id]', params: { id } })
+            }
+          />
+        </Card>
+      )}
+      {!loading && hasRecordings && !recordingsReady && (
+        <Card>
+          <Text style={styles.label}>先确认录音片段</Text>
+          <Text style={styles.body}>
+            本场有未完成或曾中断的录音。请先试听并确认保留，再开始 AI 整理。
+          </Text>
+          <Action
+            label="检查本场录音"
+            onPress={() =>
+              router.push({ pathname: '/session/[id]', params: { id } })
+            }
+          />
+        </Card>
+      )}
+      {!loading && recordingsReady && !keyConfigured && (
+        <Card>
+          <Text style={styles.label}>准备好自己的百炼 Key</Text>
+          <Text style={styles.body}>
+            整理时，录音会从手机直接发送给你配置的阿里云百炼服务临时处理。Key
+            保存在本机安全存储。
+          </Text>
+          <Action
+            label="配置百炼 Key"
+            onPress={() => router.push('/ai-settings')}
+          />
+        </Card>
+      )}
+      {!loading && recordingsReady && keyConfigured && (
+        <>
+          <Text style={styles.privacyNote}>
+            整理会把录音直接发送给你配置的百炼服务；不经过倾盖如故服务器长期保存。继续前请确认现场人员知情。
+          </Text>
+          <Action
+            label={busy ? '正在整理…' : 'AI 整理本场'}
+            disabled={busy}
+            onPress={() =>
+              Alert.alert(
+                '使用百炼整理本场？',
+                '录音将从手机直接发送给你的百炼服务。临时音频会由百炼按其保留规则处理。',
+                [
+                  { text: '取消', style: 'cancel' },
+                  { text: '开始整理', onPress: () => void process() },
+                ],
+              )
+            }
+          />
+        </>
+      )}
+      {!!status && (
+        <Text
+          accessibilityLiveRegion="polite"
+          accessibilityRole={statusError ? 'alert' : undefined}
+          style={statusError ? styles.error : styles.statusText}
+        >
+          {status}
+        </Text>
+      )}
+      {!summary && !loading && recordingsReady && keyConfigured && (
+        <Card>
+          <Text style={styles.label}>整理结果会保存在本机</Text>
+          <Text style={styles.caption}>
+            整理完成后，这里会出现摘要、话题、行动项和发言人。共享回顾需要你另行检查并发布。
+          </Text>
+        </Card>
+      )}
       {summary && (
         <>
           <Card>
@@ -194,6 +282,14 @@ export default function Analysis() {
             label="编辑这场回顾"
             onPress={() => router.push({ pathname: '/recap', params: { id } })}
           />
+          <Action
+            secondary
+            label="选择文字同步到我的小程序"
+            accessibilityHint="仅同步你选中的文字，不会发布给本场参与者"
+            onPress={() =>
+              router.push({ pathname: '/private-sync', params: { id } })
+            }
+          />
         </>
       )}
       {speakers.map((s) => (
@@ -206,7 +302,7 @@ export default function Analysis() {
             label="匹配本场参与者"
             disabled={busy}
             onPress={() =>
-              void match(s.id).catch(() => setStatus('读取参与者失败'))
+              void match(s.id).catch(() => showStatus('读取参与者失败', true))
             }
           />
           {matching === s.id && (
@@ -214,6 +310,11 @@ export default function Analysis() {
               <Text style={styles.caption}>
                 只在本场匹配，不做长期声纹识别。
               </Text>
+              {!people.length && (
+                <Text style={styles.caption}>
+                  本场还没有参与者资料。可以先生成加入码邀请大家介绍自己。
+                </Text>
+              )}
               {people.map((person) => (
                 <Action
                   key={person.id}
@@ -244,7 +345,7 @@ export default function Analysis() {
           <Text style={styles.body}>{s.text}</Text>
         </Card>
       ))}
-      {!!segments.length && (
+      {!!(segments.length || summary || topics.length || actions.length) && (
         <Action
           secondary
           label="删除 AI 结果"
@@ -261,7 +362,7 @@ export default function Analysis() {
                   onPress: () =>
                     void deleteAIResults(id)
                       .then(load)
-                      .catch(() => setStatus('删除失败，请稍后重试')),
+                      .catch(() => showStatus('删除失败，请稍后重试', true)),
                 },
               ],
             )

@@ -2,10 +2,11 @@ import { LocalMediaNotice } from '../../src/local-media-notice';
 import { importAudio } from '../../src/audio-import';
 import { cloudSessionId, cloudRequest } from '../../src/cloud';
 import { useEffect, useState } from 'react';
-import { Alert, Text, TextInput, View, Pressable } from 'react-native';
+import { Alert, Text, View, Pressable } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { Page, Heading, Card, Action, styles } from '../../src/ui';
+import { Page, Heading, Card, Action, Field, styles } from '../../src/ui';
+import { colors } from '@qinggairugu/design-tokens';
 import {
   getDatabase,
   recordingsForSession,
@@ -76,6 +77,7 @@ function Playback({
       )}
       <Action
         secondary
+        destructive
         label="删除这段录音"
         onPress={() =>
           Alert.alert(
@@ -115,6 +117,7 @@ export default function SessionDetail() {
   const [title, setTitle] = useState('');
   const [recordings, setRecordings] = useState<LocalRecording[]>([]);
   const [error, setError] = useState('');
+  const [loadingRecords, setLoadingRecords] = useState(true);
   useEffect(() => {
     let live = true;
     setOrganizer(false);
@@ -151,14 +154,20 @@ export default function SessionDetail() {
         }
       })
       .catch(() => setRoleLabel('暂时无法确认本场身份，请联网重试'));
+    setLoadingRecords(true);
+    setError('');
     void Promise.all([listSessions(), recordingsForSession(id)])
       .then(([sessions, rows]) => {
         if (live) {
           setTitle(sessions.find((s) => s.id === id)?.title ?? '');
           setRecordings(rows);
+          setError('');
         }
       })
-      .catch(() => setError('读取记录失败'));
+      .catch(() => setError('读取本机记录失败，请重新打开。'))
+      .finally(() => {
+        if (live) setLoadingRecords(false);
+      });
     return () => {
       live = false;
     };
@@ -185,6 +194,7 @@ export default function SessionDetail() {
           <Pressable
             key={key}
             accessibilityRole="tab"
+            accessibilityLabel={label}
             accessibilityState={{ selected: section === key }}
             onPress={() => setSection(key)}
             style={{
@@ -193,7 +203,7 @@ export default function SessionDetail() {
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: 10,
-              backgroundColor: section === key ? '#E8EDE1' : 'white',
+              backgroundColor: section === key ? colors.soft : 'white',
             }}
           >
             <Text>{label}</Text>
@@ -202,17 +212,12 @@ export default function SessionDetail() {
       </View>
       {section === 'settings' && (
         <>
-          <TextInput
-            accessibilityLabel="记录名称"
+          <Field
+            label="这次见面的名字"
             value={title}
             onChangeText={setTitle}
+            placeholder="给这次见面起个名字"
             maxLength={120}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: 16,
-              padding: 18,
-              fontSize: 20,
-            }}
           />
           <Action
             secondary
@@ -228,9 +233,10 @@ export default function SessionDetail() {
       {section === 'recordings' && (
         <>
           <Action
-            secondary
-            label="我的心得和照片"
-            onPress={() => router.push({ pathname: '/entry', params: { id } })}
+            label={recordings.length ? '继续记录一段' : '开始记录'}
+            onPress={() =>
+              router.push({ pathname: '/recording', params: { sid: id } })
+            }
           />
           <Action
             secondary
@@ -244,6 +250,17 @@ export default function SessionDetail() {
                 .finally(() => setImporting(false));
             }}
           />
+          {loadingRecords && (
+            <Text style={styles.caption}>正在读取本机录音…</Text>
+          )}
+          {!loadingRecords && !recordings.length && (
+            <Card>
+              <Text style={styles.label}>这里会保存这次见面的录音</Text>
+              <Text style={styles.body}>
+                可以直接开始录音，也可以导入已有音频。文件会保存在本机。
+              </Text>
+            </Card>
+          )}
           {recordings.map((recording) => (
             <Playback
               key={recording.id}
@@ -251,11 +268,18 @@ export default function SessionDetail() {
               reload={async () => setRecordings(await recordingsForSession(id))}
             />
           ))}
+          {recordings.length > 0 && (
+            <Action
+              label="查看整理与转写"
+              onPress={() =>
+                router.push({ pathname: '/analysis', params: { id } })
+              }
+            />
+          )}
           <Action
-            label="AI 整理本场"
-            onPress={() =>
-              router.push({ pathname: '/analysis', params: { id } })
-            }
+            secondary
+            label="我的心得和照片"
+            onPress={() => router.push({ pathname: '/entry', params: { id } })}
           />
         </>
       )}
@@ -285,30 +309,35 @@ export default function SessionDetail() {
             />
           )}
           {!shared && (
-            <Text style={styles.body}>
-              让大家加入后，可以在这里查看本场参与者与共享回顾。
-            </Text>
+            <Card>
+              <Text style={styles.label}>本场内容由你决定是否共享</Text>
+              <Text style={styles.body}>
+                生成加入码后，参与者可以填写「关于我」。AI
+                回顾会先作为草稿保存在本机，只有你检查并发布后才会分享。
+              </Text>
+            </Card>
           )}
         </>
       )}
       {section === 'recordings' && (
         <>
-          <Text style={styles.body}>
-            配置阿里云百炼后，可以进行 AI 整理和搜索。
-          </Text>
-          <Action
-            label="继续记录一段"
-            onPress={() =>
-              router.push({ pathname: '/recording', params: { sid: id } })
-            }
-          />
+          {recordings.length > 0 && (
+            <Text style={styles.caption}>
+              配置阿里云百炼后，可以整理录音并搜索本机历史。
+            </Text>
+          )}
         </>
       )}
-      {error && <Text style={styles.body}>{error}</Text>}
+      {error && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {error}
+        </Text>
+      )}
       {section === 'settings' && (
         <>
           <Action
             secondary
+            destructive
             label="删除这次记录"
             onPress={() =>
               Alert.alert(

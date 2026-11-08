@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Image, Text } from 'react-native';
+import { Image, Text, useWindowDimensions } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
 import { shareSession, syncParticipants } from '../src/cloud';
 import type { Profile } from '@qinggairugu/contracts';
 export default function Join() {
+  const { width } = useWindowDimensions();
+  const qrSize = Math.max(180, Math.min(260, width - 96));
   const { id } = useLocalSearchParams<{ id: string }>();
   const [qr, setQr] = useState<Awaited<ReturnType<typeof shareSession>> | null>(
     null,
   );
   const [people, setPeople] = useState<{ id: string; profile: Profile }[]>([]);
   const [error, setError] = useState('');
+  const [qrError, setQrError] = useState('');
+  const [qrRetry, setQrRetry] = useState(0);
   useEffect(() => {
     let live = true;
     let timer: ReturnType<typeof setTimeout>;
@@ -31,17 +35,18 @@ export default function Join() {
       .then((result) => {
         if (live) {
           setQr(result);
+          setQrError('');
           void poll();
         }
       })
       .catch(() => {
-        if (live) setError('加入码生成失败，请检查服务配置后重新打开。');
+        if (live) setQrError('加入码生成失败，请检查网络后重试。');
       });
     return () => {
       live = false;
       clearTimeout(timer);
     };
-  }, [id]);
+  }, [id, qrRetry]);
   return (
     <Page>
       <Heading
@@ -53,7 +58,7 @@ export default function Join() {
           <>
             <Image
               source={{ uri: qr.imageDataUrl }}
-              style={{ width: 260, height: 260, alignSelf: 'center' }}
+              style={{ width: qrSize, height: qrSize, alignSelf: 'center' }}
             />
             <Text style={styles.caption}>
               {qr.mode === 'debug'
@@ -67,10 +72,23 @@ export default function Join() {
             )}
           </>
         ) : (
-          <Text style={styles.body}>正在准备加入码…</Text>
+          <Text style={styles.body}>{qrError || '正在准备加入码…'}</Text>
         )}
-        <Text style={styles.label}>已有 {people.length} 人加入</Text>
-        {error && <Text style={styles.caption}>{error}</Text>}
+        {!!qrError && (
+          <Action
+            secondary
+            label="重试生成加入码"
+            onPress={() => setQrRetry((value) => value + 1)}
+          />
+        )}
+        <Text style={styles.label}>
+          {people.length ? `已有 ${people.length} 人加入` : '还没有人加入'}
+        </Text>
+        {error && (
+          <Text accessibilityRole="alert" style={styles.error}>
+            {error}
+          </Text>
+        )}
       </Card>
       {people.map((person) => (
         <Card key={person.id}>
@@ -79,7 +97,7 @@ export default function Join() {
         </Card>
       ))}
       <Action
-        label="记录这次见面"
+        label="开始记录这次见面"
         onPress={() =>
           router.push({ pathname: '/recording', params: { sid: id } })
         }

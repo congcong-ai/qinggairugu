@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Text, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
@@ -10,11 +10,25 @@ export default function Link() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [rows, setRows] = useState<ActivityItem[]>([]);
   const [status, setStatus] = useState('');
-  useEffect(() => {
-    void refreshActivities()
-      .then(setRows)
-      .catch((e) => setStatus(e.message));
+  const [statusError, setStatusError] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setRows(await refreshActivities());
+      setStatus('');
+      setStatusError(false);
+    } catch {
+      setStatus('暂时无法读取活动，请检查网络后重试。');
+      setStatusError(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+  const eligible = rows.filter((r) => r.sessionId && r.relation !== 'private');
   async function link(sid: string | null) {
     try {
       const db = await getDatabase();
@@ -54,8 +68,10 @@ export default function Link() {
       setStatus(
         '已更新引用，原录音、照片和心得保留。已同步 AI 副本不会自动改写，请重新确认同步。',
       );
+      setStatusError(false);
     } catch (e) {
       setStatus(e instanceof Error ? e.message : '未完成');
+      setStatusError(true);
     }
   }
   return (
@@ -64,29 +80,37 @@ export default function Link() {
         title="关联到一场活动"
         subtitle="只建立引用，不移动录音，不公开私人内容。"
       />
-      {rows
-        .filter((r) => r.sessionId && r.relation !== 'private')
-        .map((r) => (
-          <Card key={r.id}>
-            <Text style={styles.label}>{r.title}</Text>
-            <Action
-              secondary
-              label="关联这场"
-              onPress={() =>
-                Alert.alert(
-                  '确认是同一次活动？',
-                  '本地录音和照片不会上传，心得仍只有你可见。',
-                  [
-                    { text: '取消', style: 'cancel' },
-                    { text: '确认关联', onPress: () => void link(r.sessionId) },
-                  ],
-                )
-              }
-            />
-          </Card>
-        ))}
+      {loading && <Text style={styles.caption}>正在读取可以关联的活动…</Text>}
+      {!loading && !status && !eligible.length && (
+        <Card>
+          <Text style={styles.label}>还没有可关联的共享活动</Text>
+          <Text style={styles.body}>
+            先在「我的活动」创建或加入一场活动，再回来关联。这只建立本机引用，不会上传录音、照片或心得。
+          </Text>
+        </Card>
+      )}
+      {eligible.map((r) => (
+        <Card key={r.id}>
+          <Text style={styles.label}>{r.title}</Text>
+          <Action
+            secondary
+            label="关联这场"
+            onPress={() =>
+              Alert.alert(
+                '确认是同一次活动？',
+                '本地录音和照片不会上传，心得仍只有你可见。',
+                [
+                  { text: '取消', style: 'cancel' },
+                  { text: '确认关联', onPress: () => void link(r.sessionId) },
+                ],
+              )
+            }
+          />
+        </Card>
+      ))}
       <Action
         secondary
+        destructive
         label="解除共享活动引用"
         onPress={() =>
           Alert.alert('解除关联？', '只移除本地引用，不删除原共享场次。', [
@@ -95,7 +119,19 @@ export default function Link() {
           ])
         }
       />
-      <Text style={styles.caption}>{status}</Text>
+      {!!status && (
+        <Card>
+          <Text
+            accessibilityRole={statusError ? 'alert' : undefined}
+            style={statusError ? styles.error : styles.statusText}
+          >
+            {status}
+          </Text>
+          {statusError && (
+            <Action secondary label="重试" onPress={() => void load()} />
+          )}
+        </Card>
+      )}
     </Page>
   );
 }

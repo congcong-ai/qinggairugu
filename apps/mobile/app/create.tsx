@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Text, TextInput, Switch } from 'react-native';
+import { Text, Switch, View } from 'react-native';
+import { colors } from '@qinggairugu/design-tokens';
 import { randomUUID } from 'expo-crypto';
 import { router } from 'expo-router';
-import { Page, Heading, Card, Action, styles } from '../src/ui';
+import { Page, Heading, Card, Action, Field, styles } from '../src/ui';
 import { getDatabase } from '../src/storage/database';
 export default function Create() {
   const [title, setTitle] = useState('');
@@ -37,7 +38,7 @@ export default function Create() {
         date.getHours() !== Number(match?.[4]) ||
         date.getMinutes() !== Number(match?.[5]))
     ) {
-      setError('请填写有效的本地时间，例如 2026-10-17 14:30');
+      setError('请填写有效的本地时间，格式为 YYYY-MM-DD HH:mm。');
       return;
     }
     setBusy(true);
@@ -64,34 +65,54 @@ export default function Create() {
   }
   return (
     <Page>
-      <Heading title="发起活动" subtitle="我是发起人 · 创建后邀请大家加入" />
+      <Heading
+        title="提前创建一场"
+        subtitle="先准备好邀请码，见面时再开始记录。"
+      />
       <Card>
-        <TextInput
-          accessibilityLabel="这场叫什么"
+        <Field
+          label="这场叫什么"
           placeholder="这场叫什么？"
           value={title}
           maxLength={120}
           onChangeText={setTitle}
-          style={{ fontSize: 22, padding: 12 }}
+          returnKeyType="next"
         />
-        <TextInput
-          accessibilityLabel="时间（可选）"
-          placeholder="时间（可选）：2026-10-17 14:30"
+        <Field
+          label="时间（可选）"
+          placeholder="YYYY-MM-DD HH:mm"
+          hint="按本机时间填写，格式：YYYY-MM-DD HH:mm。"
           value={startsAt}
           onChangeText={setStartsAt}
-          style={{ padding: 12, fontSize: 16 }}
+          keyboardType="numbers-and-punctuation"
+          autoCapitalize="none"
         />
-        <Text style={styles.label}>参与者资料仅主办方可见</Text>
-        <Switch value={privatePeople} onValueChange={setPrivate} />
-        <Text style={styles.caption}>
-          {privatePeople
-            ? '参与者不会互相看到资料。'
-            : '本场参与者可以互相查看「关于我」。'}
-        </Text>
+        <View style={styles.switchRow}>
+          <View style={styles.switchCopy}>
+            <Text style={styles.label}>参与者资料仅主办方可见</Text>
+            <Text style={styles.caption}>
+              {privatePeople
+                ? '开启后，参与者不会互相看到彼此的介绍。'
+                : '关闭时，本场参与者可以互相查看「关于我」。'}
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel="参与者资料仅主办方可见"
+            accessibilityHint="关闭时，本场参与者可以互相查看关于我"
+            value={privatePeople}
+            onValueChange={setPrivate}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor="white"
+          />
+        </View>
       </Card>
-      {error && <Text style={styles.body}>{error}</Text>}
+      {error && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {error}
+        </Text>
+      )}
       <Action
-        label="创建并邀请大家"
+        label={busy ? '正在创建…' : '创建并生成加入码'}
         disabled={busy}
         onPress={() => void create()}
       />

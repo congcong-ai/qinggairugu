@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Alert, Platform, Switch, Text } from 'react-native';
+import { Alert, Platform, Switch, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Page, Heading, Card, Action, styles } from '../src/ui';
+import { colors } from '@qinggairugu/design-tokens';
 import { readAccount, storageScope, type Account } from '../src/account-store';
 import { loginWithWechat, logoutAccount } from '../src/account-actions';
 import { useRecording } from '../src/recording-context';
@@ -74,12 +75,25 @@ export default function AccountScreen() {
             <Text style={styles.caption}>
               认领会将当前未归属历史整体归到本次微信账号，仅改变本机归属，不上传文字和媒体。认领后退出不会显示这些账号记录；再次登录本人账号才能查看。已有其他账号归属不能再次认领。
             </Text>
-            <Text style={styles.label}>将未归属历史认领给本次微信账号</Text>
-            <Switch
-              value={claim}
-              onValueChange={setClaim}
-              disabled={busy || !canClaim}
-            />
+            <View style={styles.switchRow}>
+              <View style={styles.switchCopy}>
+                <Text style={styles.label}>认领当前免登录记录</Text>
+                <Text style={styles.caption}>
+                  {canClaim
+                    ? '开启后，现有本机记录归入本次微信账号。不会上传内容。'
+                    : '当前没有可认领的免登录历史。'}
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel="认领当前免登录记录"
+                accessibilityHint="开启后只改变本机记录归属，不会上传文字或媒体"
+                value={claim}
+                onValueChange={setClaim}
+                disabled={busy || !canClaim}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor="white"
+              />
+            </View>
           </Card>
           <Action
             label={busy ? '正在连接微信…' : '微信登录'}
@@ -91,6 +105,7 @@ export default function AccountScreen() {
       {account && (
         <Action
           secondary
+          destructive
           label="退出登录"
           disabled={busy || recording.busy || !!recording.active}
           onPress={() =>
@@ -121,8 +136,11 @@ export default function AccountScreen() {
           }
         />
       )}
-      {!!error && <Text style={styles.body}>{error}</Text>}
-      <Action secondary label="返回我的" onPress={() => router.back()} />
+      {!!error && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {error}
+        </Text>
+      )}
     </Page>
   );
 }

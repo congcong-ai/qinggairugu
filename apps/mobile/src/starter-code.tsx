@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
-import { Text, TextInput, Image } from 'react-native';
+import { Text, Image, Platform } from 'react-native';
 import { randomUUID } from 'expo-crypto';
 import { router } from 'expo-router';
-import { Card, Action, styles } from './ui';
+import { Card, Action, Field, styles } from './ui';
 import { bindingStatus, cloudRequest } from './cloud';
 import type { Profile } from '@qinggairugu/contracts';
 export function StarterCode({ title }: { title: string }) {
@@ -16,6 +16,7 @@ export function StarterCode({ title }: { title: string }) {
   const id = useRef('');
   async function show() {
     setOpen(true);
+    if (Platform.OS !== 'android') return;
     try {
       const binding = await bindingStatus();
       if (!binding.userId) {
@@ -67,7 +68,11 @@ export function StarterCode({ title }: { title: string }) {
       <Text style={styles.caption}>
         组织者用微信扫码即创建活动，你会自动加入。只传递活动名称和关于我，不传录音、心得或私人整理。
       </Text>
-      {needsBinding ? (
+      {Platform.OS !== 'android' ? (
+        <Text style={styles.caption}>
+          iOS 版暂未开放微信连接。你仍可以继续保存本机录音。
+        </Text>
+      ) : needsBinding ? (
         <Action
           secondary
           label="先关联我的小程序"
@@ -83,28 +88,32 @@ export function StarterCode({ title }: { title: string }) {
         </>
       ) : (
         <>
-          <TextInput
-            accessibilityLabel="自动加入时的名字"
+          <Field
+            label="你的名字 / 昵称"
             placeholder="名字 / 昵称"
-            style={styles.body}
             value={name}
             onChangeText={setName}
           />
-          <TextInput
-            accessibilityLabel="自动加入时的一句话介绍"
+          <Field
+            label="一句话介绍"
             placeholder="一句话介绍"
-            style={styles.body}
             value={intro}
             onChangeText={setIntro}
+            multiline
+            maxLength={240}
           />
           <Action
-            label="生成发起码"
+            label={busy ? '正在生成…' : '生成发起码'}
             disabled={busy || !name.trim() || !intro.trim()}
             onPress={() => void generate()}
           />
         </>
       )}
-      {error && <Text style={styles.caption}>{error}</Text>}
+      {error && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {error}
+        </Text>
+      )}
     </Card>
   );
 }
