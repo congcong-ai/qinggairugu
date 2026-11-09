@@ -1,6 +1,16 @@
 // 本机独立 Release APK 构建；签名资料只从仓库外的私有配置读取。
 import { spawnSync, execFileSync } from 'node:child_process';
-import { readFileSync, mkdirSync, copyFileSync, writeFileSync } from 'node:fs';
+import {
+  readFileSync,
+  mkdirSync,
+  copyFileSync,
+  writeFileSync,
+  readdirSync,
+  lstatSync,
+  realpathSync,
+  rmSync,
+  existsSync,
+} from 'node:fs';
 import { homedir } from 'node:os';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -132,13 +142,31 @@ if (androidSourceHash(root, config, api) !== sourceHash)
 const output = resolve(root, 'artifacts/android');
 mkdirSync(output, { recursive: true });
 const filename = `qinggai-${config.version}-release.apk`;
-copyFileSync(apk, resolve(output, filename));
 const bytes = readFileSync(apk);
 const sha256 = createHash('sha256').update(bytes).digest('hex');
+const mappingSource = resolve(
+  mobile,
+  'android/app/build/outputs/mapping/release/mapping.txt',
+);
+const symbolsSource = resolve(
+  mobile,
+  'android/app/build/outputs/native-debug-symbols/release/native-debug-symbols.zip',
+);
+if (!existsSync(mappingSource) || !existsSync(symbolsSource))
+  throw new Error('缺少 Android 混淆映射或原生调试符号，保留构建目录供排查');
+const mappingFilename = `${filename}.mapping.txt`;
+const symbolsFilename = `${filename}.native-debug-symbols.zip`;
+const mappingBytes = readFileSync(mappingSource);
+const symbolsBytes = readFileSync(symbolsSource);
+if (mappingBytes.length === 0 || symbolsBytes.length === 0)
+  throw new Error('Android 调试符号文件为空，保留构建目录供排查');
+copyFileSync(apk, resolve(output, filename));
 writeFileSync(
   resolve(output, `${filename}.sha256`),
   `${sha256}  ${filename}\n`,
 );
+copyFileSync(mappingSource, resolve(output, mappingFilename));
+copyFileSync(symbolsSource, resolve(output, symbolsFilename));
 const manifest = await format(
   JSON.stringify({
     schemaVersion: 1,
@@ -152,11 +180,67 @@ const manifest = await format(
     bytes: bytes.length,
     sha256,
     sourceHash,
+    mappingFilename,
+    mappingSha256: createHash('sha256').update(mappingBytes).digest('hex'),
+    nativeSymbolsFilename: symbolsFilename,
+    nativeSymbolsSha256: createHash('sha256')
+      .update(symbolsBytes)
+      .digest('hex'),
     builtAt: new Date().toISOString(),
   }),
   { parser: 'json' },
 );
 writeFileSync(resolve(output, 'release.json'), manifest);
 writeFileSync(resolve(root, releaseManifestPath), manifest);
+// 只保留最新已验证 APK 套件；AAB 是不同交付类型，保持独立。
+for (const oldApk of readdirSync(output).filter(
+  (name) =>
+    /^qinggai-\d+\.\d+\.\d+-release\.apk$/.test(name) && name !== filename,
+))
+  for (const suffix of [
+    '',
+    '.sha256',
+    '.idsig',
+    '.mapping.txt',
+    '.native-debug-symbols.zip',
+  ])
+    rmSync(resolve(output, oldApk + suffix), { force: true });
+
+// 新安装包、校验和、manifest、映射及符号已经复制并验过后，清除本项目可重建的 Android 中间产物。
+const mobileRoot = realpathSync(mobile);
+const generated = [
+  resolve(mobileRoot, 'android/build'),
+  resolve(mobileRoot, 'android/app/build'),
+  resolve(mobileRoot, 'android/app/.cxx'),
+];
+const pnpmStore = resolve(root, 'node_modules/.pnpm');
+if (existsSync(pnpmStore))
+  for (const packageEntry of readdirSync(pnpmStore, { withFileTypes: true })) {
+    if (!packageEntry.isDirectory()) continue;
+    const packageLinks = resolve(pnpmStore, packageEntry.name, 'node_modules');
+    if (!existsSync(packageLinks)) continue;
+    for (const dependency of readdirSync(packageLinks, {
+      withFileTypes: true,
+    })) {
+      if (!dependency.isSymbolicLink()) continue;
+      const dependencyRoot = realpathSync(
+        resolve(packageLinks, dependency.name),
+      );
+      if (!dependencyRoot.startsWith(pnpmStore + '/')) continue;
+      generated.push(
+        resolve(dependencyRoot, 'android/build'),
+        resolve(dependencyRoot, 'android/.cxx'),
+      );
+    }
+  }
+for (const path of [...new Set(generated)]) {
+  if (!existsSync(path) || lstatSync(path).isSymbolicLink()) continue;
+  const canonical = realpathSync(path);
+  if (
+    canonical.startsWith(mobileRoot + '/android/') ||
+    canonical.startsWith(pnpmStore + '/')
+  )
+    rmSync(canonical, { recursive: true, force: true });
+}
 console.log(`独立 Release APK 已生成：${resolve(output, filename)}`);
 console.log('构建与签名校验不代表线上 API 和小程序体验版已经就绪。');

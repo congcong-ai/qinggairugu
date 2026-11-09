@@ -2,7 +2,7 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: '倾盖如故',
   slug: 'qinggai',
-  version: '0.2.3',
+  version: '0.2.4',
   icon: './assets/icon.png',
   scheme: 'qinggairugu',
   orientation: 'portrait',
@@ -18,7 +18,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: process.env.ANDROID_PACKAGE || 'com.bebackpacker.qinggairugu',
-    versionCode: 7,
+    versionCode: 8,
     adaptiveIcon: {
       foregroundImage: './assets/icon-foreground.png',
       backgroundColor: '#F7F4EE',
