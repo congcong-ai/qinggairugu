@@ -54,6 +54,7 @@ export default function Results() {
       {list.map((r) => (
         <View className="card" key={r.id}>
           <Text className="title">{r.title}</Text>
+          <Text className="ai-content-label">AI生成内容</Text>
           <Text className="hint">
             设备结果 · {new Date(r.updatedAt).toLocaleString()}
           </Text>

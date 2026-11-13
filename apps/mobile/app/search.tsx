@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { Text } from 'react-native';
 import { router } from 'expo-router';
-import { Page, Heading, Card, Action, Field, styles } from '../src/ui';
+import {
+  AIContentLabel,
+  Page,
+  Heading,
+  Card,
+  Action,
+  Field,
+  styles,
+} from '../src/ui';
 import { askLocal } from '../src/ai-processing';
 import { formatDuration } from '@qinggairugu/shared';
 export default function Search() {
@@ -75,11 +83,13 @@ export default function Search() {
       )}
       {result && (
         <Card>
+          <AIContentLabel label="AI生成回答" />
           <Text style={styles.body}>{result.answer}</Text>
         </Card>
       )}
       {result?.sources.map((source, i) => (
         <Card key={source.id}>
+          <AIContentLabel label="AI生成转写" />
           <Text style={styles.label}>
             [{i + 1}] {source.title}
           </Text>

@@ -149,6 +149,14 @@ export function Action({
   );
 }
 
+export function AIContentLabel({ label = 'AI生成内容' }: { label?: string }) {
+  return (
+    <View accessible accessibilityLabel={label} style={styles.aiContentLabel}>
+      <Text style={styles.aiContentLabelText}>{label}</Text>
+    </View>
+  );
+}
+
 export function Field({
   label,
   hint,
@@ -381,6 +389,21 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     paddingHorizontal: 2,
+  },
+  aiContentLabel: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: colors.soft,
+    borderWidth: 1,
+    borderColor: '#C9D7C5',
+  },
+  aiContentLabelText: {
+    color: colors.primary,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '700',
   },
   exampleTabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   exampleTab: {

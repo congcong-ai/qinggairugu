@@ -7,6 +7,7 @@ import { useDidShow, useDidHide, useLoad } from '@tarojs/taro';
 import { request, currentSessionId, message } from '../../lib/api';
 export default function Recap() {
   const [content, setContent] = useState('主办方还没有发布这场回顾。');
+  const [hasAIContent, setHasAIContent] = useState(false);
   const ownSession = useRef('');
   usePageShare(() => ({ id: ownSession.current }));
   const generation = useRef(0);
@@ -30,11 +31,16 @@ export default function Recap() {
     }
     void request<{ recap: { content: string } | null }>(`/sessions/${id}/recap`)
       .then((result) => {
-        if (ticket === generation.current)
+        if (ticket === generation.current) {
+          setHasAIContent(Boolean(result.recap));
           setContent(result.recap?.content || '主办方还没有发布这场回顾。');
+        }
       })
       .catch((e) => {
-        if (ticket === generation.current) setContent(message(e));
+        if (ticket === generation.current) {
+          setHasAIContent(false);
+          setContent(message(e));
+        }
       });
   });
   return (
@@ -42,6 +48,9 @@ export default function Recap() {
       <SessionNav active="recap" />
       <Text className="title">这场回顾</Text>
       <View className="card">
+        {hasAIContent && (
+          <Text className="ai-content-label">AI生成内容 · 主办方已核对</Text>
+        )}
         <Text className="subtitle" style={{ whiteSpace: 'pre-wrap' }}>
           {content}
         </Text>

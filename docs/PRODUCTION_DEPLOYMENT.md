@@ -47,9 +47,9 @@ LETSENCRYPT_EMAIL=实际证书通知邮箱 pnpm server:install china
 
 审计并确认端口后，生成 `/var/www/qinggai/shared/.env`，数据库随机密码仅保存在该文件（root:qinggai，0640）。创建独立 Nginx 站点，校验后 reload 并由 Certbot 申请证书。已有同名站点一律不覆盖。安装中断不会自动删除资源；先核查已执行阶段，再按明确授权恢复，不能盲目重跑或删除已有数据。
 
-安装完成后，用户在服务器 `shared/.env` 填写正式 AppID 对应的 `WECHAT_APP_SECRET`。正式小程序尚未发布时，可明确设置 `WECHAT_MINIAPP_ENV=develop` 或 `trial` 验证；正式上线必须改回 `release` 并发布 `pages/session/index`。
+安装完成后，用户在服务器 `shared/.env` 填写正式 AppID 对应的 `WECHAT_APP_SECRET`。生产服务必须设置 `WECHAT_MINIAPP_ENV=release`，并发布 `pages/session/index`；生产配置校验会拒绝体验版和开发版，避免用户扫到需要申请体验权限的二维码。未发布页面的测试应使用隔离的非生产后端。
 
-配置校验失败时会逐项列出变量名与要求，不输出配置值。体验版环境应填写 `WECHAT_MINIAPP_ENV=trial`，不要误写为 `trail`。
+配置校验失败时会逐项列出变量名与要求，不输出配置值。`trial` 和 `develop` 只用于非生产环境。
 
 目录：
 
@@ -78,10 +78,10 @@ App 更新时先提升 `apps/mobile/app.config.ts` 的 version 与 versionCode�
 
 ```bash
 pnpm android:build
-pnpm android:publish
-pnpm android:check-release
-pnpm server:deploy china
+pnpm android:release
 ```
+
+`android:release` 是一键发布入口：先将当前构建的 APK 与 SHA256 校验文件上传到 GitCode Release 并校验远端文件，再检查官网将提供的 APK 版本、大小和 SHA256，最后部署官网。GitCode 上传失败时不会部署官网；网站部署失败时已发布 APK 会保留，重复执行同一命令会校验并复用相同附件后重试网站部署。仅更新官网时继续使用 `pnpm server:deploy china`，它仍会先核验线上 APK。
 
 `android:build` 沿用仓库外的正式签名配置，输出 APK、SHA256 和 `artifacts/android/release.json`，并生成需要随源码提交的 `apps/mobile/release-manifest.json`。仅后端、官网或部署文档变化无需重打 APK；Mobile 或共享代码变化后清单会失效，需要重新构建并发布。检查只读取官网和公开附件，不需要将 GitCode Token 传给官网或下载 CDN。网络失败时同样终止，可修复后重试；没有跳过检查的部署开关。
 

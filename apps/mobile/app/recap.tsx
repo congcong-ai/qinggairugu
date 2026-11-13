@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Alert, Text } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Page, Heading, Action, Field, styles } from '../src/ui';
+import {
+  AIContentLabel,
+  Page,
+  Heading,
+  Action,
+  Field,
+  styles,
+} from '../src/ui';
 import { getDatabase } from '../src/storage/database';
 import { ensureCloudSession, cloudRequest, cloudSessionId } from '../src/cloud';
 export default function Recap() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [content, setContent] = useState('');
+  const [hasAIContent, setHasAIContent] = useState(false);
   const [version, setVersion] = useState<number | null>(null);
   const [organizer, setOrganizer] = useState(false);
   const [status, setStatus] = useState('');
@@ -26,7 +34,10 @@ export default function Recap() {
           "SELECT content FROM summaries WHERE session_id=? AND kind='shared'",
           id,
         );
-        if (live) setContent(draft?.content ?? '');
+        if (live) {
+          setContent(draft?.content ?? '');
+          setHasAIContent(Boolean(draft?.content));
+        }
       } catch {
         if (live) showStatus('本机草稿读取失败，请稍后重试。', true);
       }
@@ -58,7 +69,10 @@ export default function Recap() {
           "SELECT content FROM summaries WHERE session_id=? AND kind='shared'",
           id,
         );
-        if (live && !draft) setContent(data.recap.content);
+        if (live && !draft) {
+          setContent(data.recap.content);
+          setHasAIContent(true);
+        }
       } catch {
         if (live) showStatus('联网确认本场权限后，才能发布共享回顾。', true);
       } finally {
@@ -103,6 +117,12 @@ export default function Recap() {
       <Text style={styles.privacyNote}>
         只有下面的文字会分享给本场参与者。录音、完整转写和私人摘要不会随之上传；发布前会再次请你确认。
       </Text>
+      {hasAIContent && (
+        <>
+          <AIContentLabel />
+          <Text style={styles.caption}>请核对生成内容，再决定是否发布。</Text>
+        </>
+      )}
       <Field
         label="回顾正文"
         hint="先保存在本机草稿；确认发布后，本场参与者才能看到。"

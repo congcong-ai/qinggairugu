@@ -21,8 +21,8 @@ requireConfig(
 );
 requireConfig(env.ALLOW_DEV_AUTH === 'false', 'ALLOW_DEV_AUTH 必须为 false');
 requireConfig(
-  ['release', 'trial', 'develop'].includes(env.WECHAT_MINIAPP_ENV),
-  'WECHAT_MINIAPP_ENV 必须为 release（正式版）、trial（体验版）或 develop（开发版）；体验版请拼写为 trial',
+  env.WECHAT_MINIAPP_ENV === 'release',
+  'WECHAT_MINIAPP_ENV 必须为 release（正式版），生产环境不能使用体验版或开发版',
 );
 let validDatabase = false;
 try {

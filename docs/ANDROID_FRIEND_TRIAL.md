@@ -2,6 +2,8 @@
 
 版本：Android `0.1.1`（versionCode 2），小程序开发版本 `0.1.1`。
 
+> 状态更新（2026-11-13）：本文记录的是早期体验版联动方案。正式小程序现已发布；生产后端必须使用 `WECHAT_MINIAPP_ENV=release`，不能再按下方历史步骤将生产服务切到 `trial`。未发布页面的验证应使用隔离的非生产后端。
+
 ## 交付物与构建
 
 APK 输出到 `artifacts/android/qinggai-0.1.1-release.apk`，同目录包含 SHA256 文件和 `release.json`。该目录被 Git 忽略。它是内置 JS 的独立 Release 包，使用本机生成的专属正式签名，不依赖 Expo Go、Metro、USB 或开发电脑。

@@ -16,20 +16,43 @@ export default function Recording() {
   const { sid, role } = useLocalSearchParams<{ sid?: string; role?: string }>();
   const [qr, setQr] = useState('');
   const [qrError, setQrError] = useState('');
+  const [qrRetry, setQrRetry] = useState(0);
+  const qrRequest = useRef<{
+    sessionId: string;
+    retry: number;
+    promise: ReturnType<typeof shareSession>;
+  } | null>(null);
   const sessionId = recording.active?.sessionId;
-  async function createJoinCode() {
-    if (!sessionId || sharing) return;
-    setSharing(true);
+  useEffect(() => {
+    if (!sessionId || role !== 'organizer') return;
+    let live = true;
+    setQr('');
     setQrError('');
-    try {
-      const result = await shareSession(sessionId);
-      setQr(result.imageDataUrl);
-    } catch {
-      setQrError('加入码暂不可用。录音仍保存在本机，请检查网络后重试。');
-    } finally {
-      setSharing(false);
+    setSharing(true);
+    let request = qrRequest.current;
+    if (
+      !request ||
+      request.sessionId !== sessionId ||
+      request.retry !== qrRetry
+    ) {
+      request = { sessionId, retry: qrRetry, promise: shareSession(sessionId) };
+      qrRequest.current = request;
     }
-  }
+    void request.promise
+      .then((result) => {
+        if (live) setQr(result.imageDataUrl);
+      })
+      .catch(() => {
+        if (live)
+          setQrError('加入码暂不可用。录音仍保存在本机，请检查网络后重试。');
+      })
+      .finally(() => {
+        if (live) setSharing(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, [qrRetry, role, sessionId]);
   useEffect(() => {
     if (!started.current) {
       started.current = true;
@@ -195,7 +218,7 @@ export default function Recording() {
         <Card>
           <Text style={styles.label}>邀请大家加入</Text>
           <Text style={styles.caption}>
-            只有生成加入码后，活动名称和参与者可见范围才会同步到服务端。录音不会上传。
+            加入码会自动准备。本场名称和参与者可见范围会同步到服务端，录音仍留在这台手机，不会上传。
           </Text>
           {qr ? (
             <>
@@ -207,28 +230,20 @@ export default function Recording() {
             </>
           ) : (
             <>
-              {!!qrError && (
-                <Text accessibilityRole="alert" style={styles.error}>
-                  {qrError}
-                </Text>
+              <Text
+                accessibilityRole={qrError ? 'alert' : undefined}
+                style={qrError ? styles.error : styles.caption}
+              >
+                {qrError || (sharing ? '正在准备加入码…' : '加入码暂不可用。')}
+              </Text>
+              {qrError && (
+                <Action
+                  secondary
+                  label="重试生成加入码"
+                  disabled={sharing}
+                  onPress={() => setQrRetry((value) => value + 1)}
+                />
               )}
-              <Action
-                label={sharing ? '正在生成加入码…' : '让大家加入'}
-                disabled={sharing}
-                onPress={() =>
-                  Alert.alert(
-                    '生成加入码？',
-                    '本场名称和参与者可见范围会发送到服务端，用于创建微信加入码。录音仍留在本机。',
-                    [
-                      { text: '先不生成', style: 'cancel' },
-                      {
-                        text: '生成加入码',
-                        onPress: () => void createJoinCode(),
-                      },
-                    ],
-                  )
-                }
-              />
             </>
           )}
         </Card>

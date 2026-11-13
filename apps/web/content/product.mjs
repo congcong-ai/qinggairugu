@@ -4,12 +4,16 @@ export const product = {
   origin: 'https://qgrg.bebackpacker.com',
   github: 'https://github.com/congcong-ai/qinggairugu',
   gitcode: 'https://gitcode.com/xixisys/qinggairugu-releases',
-  updatedAt: '2026-10-28',
+  googlePlay:
+    'https://play.google.com/store/apps/details?id=com.bebackpacker.qinggairugu&pcampaignid=web_share',
+  appleStore:
+    'https://apps.apple.com/cn/app/%E5%80%BE%E7%9B%96%E5%A6%82%E6%95%85/id6829204637',
+  updatedAt: '2026-11-13',
   description:
     '倾盖如故是 MIT 开源、本地优先的个人线下活动记忆工具。一个 App 同时服务发起者和参与者；小程序可独立保存文字活动心得，也可扫码加入。录音和图片只保存在 App 所在手机本地；App 支持相册导入和拍照，小程序不提供选图或录音。卸载 App 或清除应用数据会丢失本机记录。当前源码支持发起／参加两种记录入口、文字心得与发起码；小程序版本以微信实际发布为准。',
-  // 正式上线后填写仓库内的官方小程序码路径，例如 /assets/wechat-miniapp-code.webp。
+  // 官网展示官方通用小程序码；加入具体场次仍需扫描主办方的活动码。
   // 官网入口码不替代带具体场次标识的主办方活动码。
-  miniappCode: null,
+  miniappCode: '/assets/wechat-miniapp-code.jpg',
 };
 
 export const faqGroups = [
@@ -101,7 +105,7 @@ export const faqGroups = [
         id: 'miniapp-code-status',
         question: '官网上的小程序码能用了吗？怎样加入具体活动？',
         answer:
-          '官网当前为小程序入口码预留位置，正式上线后才展示可扫描的官方码。加入具体活动时，应扫描主办方提供的本场活动码，因为它包含该场次的标识。官网通用入口码不能替代本场活动码；参与者无需因此下载 App。',
+          '官网已展示微信小程序官方通用入口码，可扫码打开倾盖如故小程序。加入具体活动时，仍需扫描主办方提供的本场活动码，因为它包含该场次的标识。官网通用入口码不能替代本场活动码；参与者无需因此下载 App。',
       },
     ],
   },
@@ -155,7 +159,7 @@ export const faqGroups = [
         id: 'platforms-download',
         question: 'Android 在哪里下载？iPhone 和微信小程序怎么使用？',
         answer:
-          '组织者可在 GitCode Release 下载倾盖如故 Android APK，官网 Android 下载入口会跳转 GitCode 或其公开 CDN。iOS 版正在申请 App Store 上架中，尚无可用的 App Store 下载链接。活动参与者使用微信扫码加入，不需要下载组织者 App；小程序入口码正式上线后展示。',
+          '倾盖如故 Android App 已在 Google Play 上架，也可从官网底部下载由 GitCode Release 托管的最新 APK。iPhone 版已在中国区 App Store 上架。官网展示微信小程序官方通用入口码；加入具体活动时请扫描主办方的本场活动码。',
       },
       {
         id: 'github-gitcode',

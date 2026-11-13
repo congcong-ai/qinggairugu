@@ -13,7 +13,7 @@ const valid = {
   WECHAT_APP_ID: 'wx066bf055f6b9d415',
   WECHAT_APP_SECRET: 'test-wechat-secret',
   ALLOW_DEV_AUTH: 'false',
-  WECHAT_MINIAPP_ENV: 'trial',
+  WECHAT_MINIAPP_ENV: 'release',
 };
 function validate(overrides = {}) {
   return spawnSync(process.execPath, [script], {
@@ -22,15 +22,14 @@ function validate(overrides = {}) {
   });
 }
 describe('生产配置校验', () => {
-  it.each(['release', 'trial', 'develop'])('接受 %s 小程序环境', (env) => {
-    expect(validate({ WECHAT_MINIAPP_ENV: env }).status).toBe(0);
+  it('只接受正式版小程序码', () => {
+    expect(validate({ WECHAT_MINIAPP_ENV: 'release' }).status).toBe(0);
   });
-  it('明确指出体验版拼写错误，不输出配置值', () => {
-    const result = validate({ WECHAT_MINIAPP_ENV: 'trail' });
+  it.each(['trial', 'develop', 'trail'])('拒绝 %s 小程序码', (env) => {
+    const result = validate({ WECHAT_MINIAPP_ENV: env });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('WECHAT_MINIAPP_ENV');
-    expect(result.stderr).toContain('体验版请拼写为 trial');
-    expect(result.stderr).not.toContain('trail');
+    expect(result.stderr).toContain('生产环境不能使用体验版或开发版');
     expect(result.stderr).not.toContain(valid.WECHAT_APP_SECRET);
     expect(result.stderr).not.toContain('test-db-password');
   });

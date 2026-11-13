@@ -190,6 +190,17 @@ a:focus-visible {
   background: var(--ink);
   color: var(--paper);
 }
+.play-icon {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border-radius: 9px;
+  background: #fff3ed;
+  color: var(--orange);
+  font-size: 20px;
+  line-height: 1;
+}
 .android-icon {
   font-size: 30px;
   font-weight: 300;
@@ -867,16 +878,23 @@ a:focus-visible {
 .download-actions .button {
   padding: 15px 19px;
 }
-.ios {
+.button.apk-download {
   border: 1px solid #bbc5a7;
   background: transparent;
   color: #59634b;
 }
-.ios-symbol {
-  font-size: 31px;
+.button.apk-download:hover {
+  background: #f2f3eb;
+  box-shadow: 0 9px 24px #36432b18;
 }
-.ios small {
-  font-size: 9px;
+.button.appstore-download {
+  border: 1px solid #bbc5a7;
+  background: transparent;
+  color: #59634b;
+}
+.button.appstore-download:hover {
+  background: #f2f3eb;
+  box-shadow: 0 9px 24px #36432b18;
 }
 .download-note {
   font-size: 10px;
@@ -1067,17 +1085,7 @@ dialog p {
     letter-spacing: 1px;
   }
   .nav nav {
-    gap: 15px;
-  }
-  .nav nav > a:not(.nav-download) {
     display: none;
-  }
-  .nav-download {
-    font-size: 11px;
-    padding: 10px 13px;
-  }
-  .nav-download span {
-    margin-left: 8px;
   }
   .hero {
     grid-template-columns: 1fr;
@@ -1257,9 +1265,6 @@ dialog p {
   }
   .download-actions .button-arrow {
     margin-left: auto;
-  }
-  .ios small {
-    font-size: 10px;
   }
   .privacy-note {
     font-size: 9px;

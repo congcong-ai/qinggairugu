@@ -42,6 +42,7 @@ if (process.env.NODE_ENV === 'production') {
     WECHAT_APP_ID: z.literal('wx066bf055f6b9d415'),
     WECHAT_APP_SECRET: z.string().min(1),
     ALLOW_DEV_AUTH: z.literal('false'),
+    WECHAT_MINIAPP_ENV: z.literal('release'),
     HOST: z.literal('127.0.0.1'),
   }).parse(process.env);
 }

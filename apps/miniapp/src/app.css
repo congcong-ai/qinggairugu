@@ -73,6 +73,17 @@ page {
   color: #72786c;
   line-height: 1.7;
 }
+.ai-content-label {
+  align-self: flex-start;
+  padding: 6rpx 12rpx;
+  border: 1rpx solid #c9d7c5;
+  border-radius: 999rpx;
+  background: #e8ede1;
+  color: #426b4e;
+  font-size: 22rpx;
+  font-weight: 600;
+  line-height: 1.5;
+}
 .field {
   padding: 22rpx 0;
   border-bottom: 1rpx solid #e2e5db;

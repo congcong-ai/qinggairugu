@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius } from '@qinggairugu/design-tokens';
 import { Heading, Page } from '../../src/ui';
+import { PRIVACY_POLICY_URL } from '../../src/privacy-consent';
 
 const version = Constants.expoConfig?.version ?? '未知';
 
@@ -93,6 +94,15 @@ export default function Screen() {
           录音和照片保存在这台设备。你主动整理时，录音会临时发送到自己配置的 AI
           服务处理。
         </Text>
+        <Pressable
+          accessibilityRole="link"
+          onPress={() =>
+            void Linking.openURL(PRIVACY_POLICY_URL).catch(() => {})
+          }
+          style={({ pressed }) => pressed && styles.pressed}
+        >
+          <Text style={styles.privacyLink}>阅读完整隐私政策 ↗</Text>
+        </Pressable>
       </View>
 
       <View style={styles.footer}>
@@ -160,6 +170,7 @@ const styles = StyleSheet.create({
   privacyIcon: { color: colors.primary, fontSize: 18 },
   privacyTitle: { color: colors.ink, fontSize: 14, fontWeight: '600' },
   privacyCopy: { color: colors.muted, fontSize: 12, lineHeight: 18 },
+  privacyLink: { color: colors.primary, fontSize: 13, fontWeight: '600' },
   footer: { alignItems: 'center', paddingTop: 3, paddingBottom: 12, gap: 5 },
   brand: { color: colors.ink, fontSize: 15, fontWeight: '600' },
   tagline: { color: colors.muted, fontSize: 12 },

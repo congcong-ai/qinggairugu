@@ -6,7 +6,7 @@
 
 录音原件、图片和搜索向量只保存在用户手机，**不上传倾盖如故服务器**。转写、摘要和心得默认本地保存，仅经本人主动确认才同步选择的文字。AI 整理需要联网：仅在用户主动发起时，录音临时发送至用户配置的百炼服务处理。
 
-[MIT 开源](LICENSE) · [查看源码](https://github.com/congcong-ai/qinggairugu) · [Android 国内下载](https://gitcode.com/xixisys/qinggairugu-releases/releases) · [官网产品问答](https://qgrg.bebackpacker.com/faq) · [常见问答](#常见问答) · [本地开发](docs/LOCAL_DEVELOPMENT.md) · [隐私说明](docs/PRIVACY_POLICY.md)
+[MIT 开源](LICENSE) · [查看源码](https://github.com/congcong-ai/qinggairugu) · [Google Play 下载](https://play.google.com/store/apps/details?id=com.bebackpacker.qinggairugu&pcampaignid=web_share) · [App Store 下载](https://apps.apple.com/cn/app/%E5%80%BE%E7%9B%96%E5%A6%82%E6%95%85/id6829204637) · [Android 国内 APK](https://gitcode.com/xixisys/qinggairugu-releases/releases) · [官网产品问答](https://qgrg.bebackpacker.com/faq) · [常见问答](#常见问答) · [本地开发](docs/LOCAL_DEVELOPMENT.md) · [隐私说明](docs/PRIVACY_POLICY.md)
 
 ## 倾盖如故是什么？
 
@@ -91,7 +91,6 @@
 以下问答与[官网产品问答](https://qgrg.bebackpacker.com/faq)使用同一份内容，覆盖组织者办活动、录音与 AI 整理、参与者扫码认识彼此等场景。
 
 <!-- product-faq:start -->
-
 ### 办活动与组织者
 
 #### 发起与参加有什么区别？发起码和加入码怎么用？
@@ -146,7 +145,7 @@
 
 #### 官网上的小程序码能用了吗？怎样加入具体活动？
 
-官网当前为小程序入口码预留位置，正式上线后才展示可扫描的官方码。加入具体活动时，应扫描主办方提供的本场活动码，因为它包含该场次的标识。官网通用入口码不能替代本场活动码；参与者无需因此下载 App。
+官网已展示微信小程序官方通用入口码，可扫码打开倾盖如故小程序。加入具体活动时，仍需扫描主办方提供的本场活动码，因为它包含该场次的标识。官网通用入口码不能替代本场活动码；参与者无需因此下载 App。
 
 ### 录音、AI 与隐私
 
@@ -178,7 +177,7 @@
 
 #### Android 在哪里下载？iPhone 和微信小程序怎么使用？
 
-组织者可在 GitCode Release 下载倾盖如故 Android APK，官网 Android 下载入口会跳转 GitCode 或其公开 CDN。iOS 版正在申请 App Store 上架中，尚无可用的 App Store 下载链接。活动参与者使用微信扫码加入，不需要下载组织者 App；小程序入口码正式上线后展示。
+倾盖如故 Android App 已在 Google Play 上架，也可从官网底部下载由 GitCode Release 托管的最新 APK。iPhone 版已在中国区 App Store 上架。官网展示微信小程序官方通用入口码；加入具体活动时请扫描主办方的本场活动码。
 
 #### GitHub 和 GitCode 哪个是主仓库？GitCode 上有源码吗？
 
@@ -187,7 +186,6 @@ GitHub 的 congcong-ai/qinggairugu 是完整源码、开发文档和问题反馈
 #### 倾盖如故是开源项目吗？可以修改和自部署吗？
 
 是。倾盖如故采用 MIT 许可证，完整源码在 GitHub 公开，允许在保留版权与许可声明的条件下使用、修改和分发。自部署需要配置自己的微信小程序、后端、PostgreSQL 等服务，AI 整理使用用户自己的百炼 Key。第三方依赖和资源遵循各自许可证。
-
 <!-- product-faq:end -->
 
 ## 开发、自部署与贡献
@@ -202,7 +200,7 @@ pnpm dev:web
 
 上述命令启动品牌官网预览，不会自动创建数据库、配置微信服务或启动完整业务链路。完整配置与开发步骤见 [本地开发与部署](docs/LOCAL_DEVELOPMENT.md)。
 
-正式 Android 包使用 `pnpm android:build` 构建、`pnpm android:publish` 发布到 GitCode。App 更新时先递增 version / versionCode，并随源码提交生成的 `apps/mobile/release-manifest.json`。`pnpm server:deploy` 在连接服务器前自动校验当前源码、官网 APK 版本与实际下载文件 SHA256；旧包或检查失败会提示并终止。可用 `pnpm android:check-release` 单独检查，详见 [Android 发布清单](docs/APP_RELEASE_CHECKLIST.md)。
+正式 Android 包使用 `pnpm android:build` 构建，再运行 `pnpm android:release` 一键发布到 GitCode 并更新官网。App 更新时先递增 version / versionCode，并随源码提交生成的 `apps/mobile/release-manifest.json`。`pnpm server:deploy` 在连接服务器前自动校验当前源码、官网 APK 版本与实际下载文件 SHA256；旧包或检查失败会提示并终止。可用 `pnpm android:check-release` 单独检查，详见 [Android 发布清单](docs/APP_RELEASE_CHECKLIST.md)。
 
 | 目录           | 内容                                                          |
 | -------------- | ------------------------------------------------------------- |

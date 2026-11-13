@@ -32,6 +32,11 @@ if (
 )
   throw new Error('小程序码配置对应的文件不存在');
 const index = readFileSync(resolve(source, 'index.html'), 'utf8')
+  .replaceAll(
+    '__GOOGLE_PLAY_URL__',
+    product.googlePlay.replaceAll('&', '&amp;'),
+  )
+  .replaceAll('__APP_STORE_URL__', product.appleStore)
   .replace(
     '<!-- app-schema -->',
     `<script type="application/ld+json">${JSON.stringify(appSchema()).replaceAll('<', '\u003c')}</script>`,

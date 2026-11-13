@@ -2,7 +2,7 @@ import { randomUUID } from 'expo-crypto';
 import { useEffect, useState } from 'react';
 import { Text, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Page, Heading, Card, Action, styles } from '../src/ui';
+import { AIContentLabel, Page, Heading, Card, Action, styles } from '../src/ui';
 import { processSession, deleteAIResults } from '../src/ai-processing';
 import { getDatabase, recordingsForSession } from '../src/storage/database';
 import { syncParticipants } from '../src/cloud';
@@ -260,10 +260,12 @@ export default function Analysis() {
       {summary && (
         <>
           <Card>
+            <AIContentLabel />
             <Text style={styles.label}>摘要</Text>
             <Text style={styles.body}>{summary}</Text>
           </Card>
           <Card>
+            <AIContentLabel />
             <Text style={styles.label}>主要话题</Text>
             {topics.map((t, i) => (
               <Text key={i} style={styles.body}>
@@ -339,6 +341,7 @@ export default function Analysis() {
       ))}
       {segments.map((s) => (
         <Card key={s.id}>
+          <AIContentLabel label="AI生成转写" />
           <Text style={styles.caption}>
             {s.person} · {formatDuration(s.start_ms)}
           </Text>

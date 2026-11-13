@@ -37,26 +37,6 @@ if (window.matchMedia('(hover: hover)').matches) {
     phone.style.transform = '';
   });
 }
-const dialog = document.querySelector('#ios-dialog');
-document
-  .querySelector('#ios-status')
-  ?.addEventListener('click', () => dialog.showModal());
-dialog?.querySelectorAll('button').forEach((button) => {
-  button.addEventListener('click', () => dialog.close());
-});
-dialog?.addEventListener('click', (event) => {
-  if (event.target === dialog) {
-    const rect = dialog.getBoundingClientRect();
-    if (
-      event.clientX < rect.left ||
-      event.clientX > rect.right ||
-      event.clientY < rect.top ||
-      event.clientY > rect.bottom
-    )
-      dialog.close();
-  }
-});
-
 // 版本信息来自 GitCode；不可用时保留通用下载文案，不显示过期版本。
 fetch('/downloads/release.json', { cache: 'no-store' })
   .then(async (response) => {

@@ -53,10 +53,11 @@ describe('公网产品问答与抓取产物', () => {
     expect(markdown).toContain('录音和图片只保存在 App 所在手机本地');
     expect(markdown).toContain('手机会把录音临时发送阿里云百炼处理');
   });
-  it('小程序未上线时只有明确标注的占位，不生成可误扫的二维码', () => {
+  it('官网展示已上线的小程序码，并说明具体活动仍需使用本场活动码', () => {
     const entry = miniappEntry();
-    expect(entry).toContain('当前不可扫描');
-    expect(entry).not.toContain('<img');
+    expect(entry).toContain('/assets/wechat-miniapp-code.jpg');
+    expect(entry).toContain('官方微信小程序入口码');
+    expect(entry).toContain('<img');
     expect(entry).not.toContain('<canvas');
   });
 });
