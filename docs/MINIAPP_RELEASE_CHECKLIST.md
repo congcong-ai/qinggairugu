@@ -3,8 +3,9 @@
 - [ ] 微信公众平台创建正确主体的小程序，取得真实 AppID / AppSecret。
 - [ ] AppID 写入 `apps/miniapp/project.config.json`；AppSecret 只在后端环境设置。
 - [ ] 确认服务类目符合实际功能，不包装成公开社交或票务产品。
-- [ ] 配置正式 HTTPS request 合法域名，设置 `TARO_APP_API_URL`。
-- [ ] 正式构建不设置 `TARO_APP_DEV_AUTH=true`，后端 `NODE_ENV=production`。
+- [ ] 配置正式 HTTPS request 合法域名 `https://qgrg.bebackpacker.com`。
+- [ ] 确认运行时 API 自动路由：开发者工具模拟器连本机；真实微信客户端连线上 API 并使用 `wx.login`。不需要为上传重新构建。
+- [ ] 后端 `NODE_ENV=production` 且 `ALLOW_DEV_AUTH=false`。
 - [ ] 微信开发者工具导入成功、编译成功、真机扫码成功。
 - [ ] 发布 `pages/session/index` 后验证官方小程序码；scene 为移除连字符的 32 位 UUID。
 - [ ] wx.login code 由后端兑换；不得把 AppSecret 放入小程序包。
@@ -22,13 +23,7 @@
 
 实际提交时发现 Zod 动态编译在小程序内报错，已将小程序资料校验改为 `safeParse(profile, { jitless: true })`，重新构建后同一路径实际加入成功。
 
-手机联调时，小程序 `TARO_APP_API_URL` 指向电脑局域网地址（本次为 `http://192.168.3.192:9001`），手机与电脑应在同一局域网。开发身份构建命令：
-
-```sh
-TARO_APP_API_URL=http://192.168.3.192:9001 TARO_APP_DEV_AUTH=true NODE_ENV=development pnpm --filter @qinggairugu/miniapp build
-```
-
-地址随网络变化调整。正式构建不能使用开发身份；测试号、游客占位 AppID 和正式账号应明确区分。不得借用其它项目的 AppID。
+历史手机联调（2026-10-18）曾通过构建变量把请求指向电脑局域网。当前已改为按运行平台自动路由，不再使用这套手动切换方式。测试号、游客占位 AppID 和正式账号应明确区分；不得借用其它项目的 AppID。
 
 ### 测试号真实身份与开发版码（2026-10-18）
 

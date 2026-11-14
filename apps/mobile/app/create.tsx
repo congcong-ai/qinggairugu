@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Text, Switch, View } from 'react-native';
-import { colors } from '@qinggairugu/design-tokens';
+import { Text } from 'react-native';
 import { randomUUID } from 'expo-crypto';
 import { router } from 'expo-router';
 import { Page, Heading, Card, Action, Field, styles } from '../src/ui';
@@ -8,7 +7,6 @@ import { getDatabase } from '../src/storage/database';
 export default function Create() {
   const [title, setTitle] = useState('');
   const [startsAt, setStartsAt] = useState('');
-  const [privatePeople, setPrivate] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   async function create() {
@@ -53,7 +51,7 @@ export default function Create() {
         'ready',
         now,
         now,
-        privatePeople ? 'organizer_only' : 'everyone',
+        'everyone',
         date ? date.toISOString() : null,
       );
       router.replace({ pathname: '/join', params: { id } });
@@ -87,24 +85,9 @@ export default function Create() {
           keyboardType="numbers-and-punctuation"
           autoCapitalize="none"
         />
-        <View style={styles.switchRow}>
-          <View style={styles.switchCopy}>
-            <Text style={styles.label}>参与者资料仅主办方可见</Text>
-            <Text style={styles.caption}>
-              {privatePeople
-                ? '开启后，参与者不会互相看到彼此的介绍。'
-                : '关闭时，本场参与者可以互相查看「关于我」。'}
-            </Text>
-          </View>
-          <Switch
-            accessibilityLabel="参与者资料仅主办方可见"
-            accessibilityHint="关闭时，本场参与者可以互相查看关于我"
-            value={privatePeople}
-            onValueChange={setPrivate}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor="white"
-          />
-        </View>
+        <Text style={styles.caption}>
+          扫码加入后，本场参与者可以互相查看彼此的「关于我」。
+        </Text>
       </Card>
       {error && (
         <Text accessibilityRole="alert" style={styles.error}>

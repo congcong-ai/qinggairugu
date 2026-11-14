@@ -2,9 +2,12 @@ import { subscribeAccount, accountGeneration } from '../src/account-store';
 import { useEffect, useSyncExternalStore } from 'react';
 import { initializeDeviceIdentity } from '../src/cloud';
 import { RecordingProvider } from '../src/recording-context';
-import { Stack } from 'expo-router';
+import { router, Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from '@qinggairugu/design-tokens';
+import { View } from 'react-native';
+import { AppTabBar, RecordingNotice } from '../src/app-navigation';
+import { useRecording } from '../src/recording-context';
 import {
   PrivacyConsentProvider,
   usePrivacyConsent,
@@ -33,14 +36,55 @@ function RootNavigation() {
     void initializeDeviceIdentity().catch(() => {});
   }, [status]);
 
-  const stack = (
+  return (
+    <>
+      <StatusBar style="dark" />
+      {status === 'accepted' ? (
+        <RecordingProvider key={epoch}>
+          <AppShell />
+        </RecordingProvider>
+      ) : (
+        <AppRoutes appEnabled={false} />
+      )}
+    </>
+  );
+}
+
+function AppShell() {
+  const pathname = usePathname();
+  const recording = useRecording();
+  const isRecordingScreen = pathname === '/recording';
+  const showTabs =
+    pathname !== '/privacy' &&
+    !(
+      isRecordingScreen &&
+      (recording.status === 'recording' || recording.busy)
+    );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <AppRoutes appEnabled />
+      {recording.active && !isRecordingScreen && (
+        <RecordingNotice
+          status={recording.status}
+          duration={recording.duration}
+          onPress={() => router.replace('/recording')}
+        />
+      )}
+      {showTabs && <AppTabBar pathname={pathname} />}
+    </View>
+  );
+}
+
+function AppRoutes({ appEnabled }: { appEnabled: boolean }) {
+  return (
     <Stack
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Protected guard={status === 'accepted'}>
+      <Stack.Protected guard={appEnabled}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="account" />
         <Stack.Screen name="activity-join" />
@@ -63,16 +107,5 @@ function RootNavigation() {
       </Stack.Protected>
       <Stack.Screen name="privacy" options={{ gestureEnabled: false }} />
     </Stack>
-  );
-
-  return (
-    <>
-      <StatusBar style="dark" />
-      {status === 'accepted' ? (
-        <RecordingProvider key={epoch}>{stack}</RecordingProvider>
-      ) : (
-        stack
-      )}
-    </>
   );
 }

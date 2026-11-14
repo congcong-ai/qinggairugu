@@ -23,6 +23,7 @@ export default function Recording() {
     promise: ReturnType<typeof shareSession>;
   } | null>(null);
   const sessionId = recording.active?.sessionId;
+  const hideTabs = recording.status === 'recording' || recording.busy;
   useEffect(() => {
     if (!sessionId || role !== 'organizer') return;
     let live = true;
@@ -84,7 +85,7 @@ export default function Recording() {
     return () => subscription.remove();
   }, [recording.active, recording.busy]);
   return (
-    <Page>
+    <Page bottomInset={hideTabs}>
       <Heading
         title={recording.active ? '正在记录' : '留住这次见面'}
         subtitle={recording.active?.title ?? '无需起名，先好好聊聊。'}

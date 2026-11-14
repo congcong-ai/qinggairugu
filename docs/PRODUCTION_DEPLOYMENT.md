@@ -101,15 +101,13 @@ systemctl is-enabled pm2-qinggai
 
 `/health` 检查服务标识；`/health/db` 实际查询 sessions 表，能发现未迁移或数据库不可用，失败只返回通用状态。发布脚本不自动创建测试用户或业务数据。
 
-生产双端构建前分别设置：
+生产构建前 Mobile 设置：
 
 ```dotenv
 EXPO_PUBLIC_API_URL=https://qgrg.bebackpacker.com
-TARO_APP_API_URL=https://qgrg.bebackpacker.com
-TARO_APP_DEV_AUTH=false
 ```
 
-前者放 `apps/mobile/.env`，后两者用于小程序构建进程；不可把微信 Secret 或百炼 Key 放入公开构建变量。还需在微信公众平台配置 HTTPS request 合法域名，这也是外部配置写入，当前未操作。
+该变量放在 `apps/mobile/.env`。小程序运行时自动按平台选择 API：开发者工具模拟器使用本机 API，真实微信客户端使用 `https://qgrg.bebackpacker.com`，无需在上传前更换构建变量。不可把微信 Secret 或百炼 Key 放入公开构建变量。还需在微信公众平台配置 HTTPS request 合法域名，这也是外部配置写入，当前未操作。
 
 HTTPS 上线后，在真实手机验证：App 创建场次 → 官方码 → 微信真实登录 → 加入/复用资料 → App 人数更新 → App 确认发布 → 微信读取同场回顾。当前的本地验收不能替代生产双端验收、长时间录音或两台设备同时验收。
 

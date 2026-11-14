@@ -1,4 +1,7 @@
 import { execFileSync, spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { resolve } from 'node:path';
 const [port, command, ...args] = process.argv.slice(2);
 if (!port || !command || !/^\d+$/.test(port))
   throw new Error('缺少端口或启动命令');
@@ -32,7 +35,17 @@ for (let attempt = 0; attempt < 40; attempt++) {
   await new Promise((resolve) => setTimeout(resolve, 100));
   if (attempt === 39) throw new Error('旧服务未退出，请检查端口 ' + port);
 }
-const child = spawn(command, args, { stdio: 'inherit', env: process.env });
+const env = { ...process.env };
+if (
+  command === 'expo' &&
+  args[0] === 'run:android' &&
+  !env.ANDROID_DEBUG_KEYSTORE_FILE
+) {
+  const sharedDebugKeystore = resolve(homedir(), '.android/debug.keystore');
+  if (existsSync(sharedDebugKeystore))
+    env.ANDROID_DEBUG_KEYSTORE_FILE = sharedDebugKeystore;
+}
+const child = spawn(command, args, { stdio: 'inherit', env });
 for (const signal of ['SIGINT', 'SIGTERM'])
   process.on(signal, () => child.kill(signal));
 child.on('exit', (code) => process.exit(code ?? 1));

@@ -28,6 +28,7 @@ vi.mock('./storage/database', () => {
   return { getDatabase: async () => db };
 });
 import {
+  shareSession,
   syncParticipants,
   CloudRequestError,
   cloudRequest,
@@ -65,6 +66,33 @@ it('云端请求使用显式映射，不能把本地 ID 当作云端 ID', async 
   expect(
     fetcher.mock.calls.some(([url]) => url.includes('/sessions/local-session')),
   ).toBe(false);
+});
+it('生成加入码前将已有场次切换为参与者互相可见', async () => {
+  const fetcher = vi.fn(
+    async (_url: string, init?: RequestInit) =>
+      new Response(
+        JSON.stringify(
+          init?.method === 'PATCH'
+            ? { participantVisibility: 'everyone' }
+            : { imageDataUrl: 'data:image/png;base64,AA==' },
+        ),
+        { status: 200 },
+      ),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  await shareSession('local-session');
+  const visibilityUpdate = fetcher.mock.calls.find(
+    ([url, init]) =>
+      url.endsWith('/sessions/00000000-0000-4000-8000-000000000003') &&
+      init?.method === 'PATCH',
+  );
+  expect(visibilityUpdate).toBeDefined();
+  expect(JSON.parse(String(visibilityUpdate?.[1]?.body))).toEqual({
+    participantVisibility: 'everyone',
+  });
+  expect(state.queries).toContain(
+    "UPDATE sessions SET participant_visibility='everyone' WHERE id=?",
+  );
 });
 it('网络或服务器暂时失败不删除本地人物及人工映射', async () => {
   vi.stubGlobal(

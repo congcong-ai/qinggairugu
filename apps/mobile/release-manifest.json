@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
   "name": "倾盖如故",
-  "version": "0.2.6",
-  "versionCode": 10,
+  "version": "0.2.7",
+  "versionCode": 11,
   "package": "com.bebackpacker.qinggairugu",
   "api": "https://qgrg.bebackpacker.com",
   "architectures": ["arm64-v8a", "armeabi-v7a"],
-  "filename": "qinggai-0.2.6-release.apk",
-  "bytes": 50732436,
-  "sha256": "4b5ee761de9398a0ac35834a40a563595809e9cbec9f25c3b04181c12d7a501f",
-  "sourceHash": "7b03ec64d46a74317b9f2175ae03ce167cf2faf84b699e4d652501acd300352b",
-  "mappingFilename": "qinggai-0.2.6-release.apk.mapping.txt",
+  "filename": "qinggai-0.2.7-release.apk",
+  "bytes": 50734300,
+  "sha256": "b5258f5e8163e45cd2ae6bb227ae8849523c8037f9cf808be846d4fd6efffb53",
+  "sourceHash": "12a7ad090cb782bcd84ff1b6576cfd0dae2b4bdc28fcb82a629972dd70ddbf84",
+  "mappingFilename": "qinggai-0.2.7-release.apk.mapping.txt",
   "mappingSha256": "a77a5fbd601f691bcd0aa6b1c791fa3e5a93892a8d914d294021144672cfb711",
-  "nativeSymbolsFilename": "qinggai-0.2.6-release.apk.native-debug-symbols.zip",
+  "nativeSymbolsFilename": "qinggai-0.2.7-release.apk.native-debug-symbols.zip",
   "nativeSymbolsSha256": "095dc2c4038c7d9ef199dd2873108de6126fba359db0ad5613a80469efd700d0",
-  "builtAt": "2026-11-13T09:15:50.957Z"
+  "builtAt": "2026-11-13T10:44:44.389Z"
 }

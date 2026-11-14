@@ -3,7 +3,7 @@ import { SessionNote } from '../../components/session-note';
 import { SessionNav } from '../../components/session-nav';
 import { sessionIdFromRoute } from '../../lib/session-route';
 import { useState, useRef } from 'react';
-import { View, Text, Button, Image } from '@tarojs/components';
+import { View, Text, Button, Image, ScrollView } from '@tarojs/components';
 import Taro, { useLoad, useDidShow, useDidHide, useUnload } from '@tarojs/taro';
 import type { CloudSession, Profile } from '@qinggairugu/contracts';
 import {
@@ -18,9 +18,24 @@ type SessionInfo = CloudSession & {
   isMember: boolean;
   archived: boolean;
 };
+type Participant = { id: string; profile: Profile };
+const profileFields: [keyof Profile, string][] = [
+  ['introduction', '一句话介绍'],
+  ['workingOn', '最近在搞什么'],
+  ['wantToDiscuss', '今天想聊什么'],
+  ['wantToMeet', '想认识什么样的人'],
+  ['canDiscuss', '可以找我聊什么'],
+  ['organization', '公司 / 组织'],
+  ['occupation', '职业'],
+  ['city', '城市'],
+  ['publicLink', '公开账号链接'],
+];
 export default function SessionPage() {
   const [session, setSession] = useState<SessionInfo | null>(null);
-  const [people, setPeople] = useState<{ id: string; profile: Profile }[]>([]);
+  const [people, setPeople] = useState<Participant[]>([]);
+  const [selectedPerson, setSelectedPerson] = useState<Participant | null>(
+    null,
+  );
   const [peopleError, setPeopleError] = useState('');
   const [error, setError] = useState('');
   const [qr, setQr] = useState('');
@@ -70,6 +85,7 @@ export default function SessionPage() {
           .catch((e) => {
             if (live()) {
               setPeople([]);
+              setSelectedPerson(null);
               setPeopleError(message(e));
             }
           });
@@ -108,6 +124,7 @@ export default function SessionPage() {
     if (timer.current) clearInterval(timer.current);
     timer.current = null;
     setPeople([]);
+    setSelectedPerson(null);
     setQr('');
   });
   return (
@@ -164,6 +181,11 @@ export default function SessionPage() {
       {session?.isMember && !session.isOrganizer && (
         <Text className="hint">你已加入这场，切换「我的记录」留下心得。</Text>
       )}
+      {session && !session.isOrganizer && !session.isMember && (
+        <Text className="hint">
+          加入这场后，就能点开查看本场其他参与者的「关于我」。
+        </Text>
+      )}
       {session && (
         <>
           <View className="page-heading">
@@ -184,7 +206,12 @@ export default function SessionPage() {
           {!!people.length && (
             <View className="list-group">
               {people.map((person) => (
-                <View className="participant-row" key={person.id}>
+                <Button
+                  className="participant-row participant-row-button"
+                  key={person.id}
+                  aria-label={`查看${person.profile.name}的关于我`}
+                  onClick={() => setSelectedPerson(person)}
+                >
                   <View className="person-avatar">
                     {person.profile.name.slice(0, 1)}
                   </View>
@@ -192,16 +219,55 @@ export default function SessionPage() {
                     <Text className="row-title">{person.profile.name}</Text>
                     <Text className="hint">{person.profile.introduction}</Text>
                   </View>
-                </View>
+                  <Text className="participant-more">查看详情 ›</Text>
+                </Button>
               ))}
             </View>
           )}
           <Text className="hint">
             {session.participantVisibility === 'everyone'
-              ? '本场参与者的关于我互相可见。'
+              ? '点开参与者，可以查看完整的「关于我」。'
               : '参与者资料仅发起人可见。'}
           </Text>
         </>
+      )}
+      {selectedPerson && (
+        <View className="profile-detail-mask">
+          <View className="profile-detail-sheet">
+            <View className="profile-detail-heading">
+              <View className="person-avatar profile-detail-avatar">
+                {selectedPerson.profile.name.slice(0, 1)}
+              </View>
+              <View className="profile-detail-name">
+                <Text className="row-title">{selectedPerson.profile.name}</Text>
+                <Text className="hint">本场参与者的「关于我」</Text>
+              </View>
+            </View>
+            <ScrollView
+              className="profile-detail-scroll"
+              scrollY
+              enhanced
+              showScrollbar={false}
+            >
+              {profileFields.map(([key, label]) => {
+                const value = selectedPerson.profile[key];
+                if (typeof value !== 'string' || !value.trim()) return null;
+                return (
+                  <View className="profile-detail-field" key={key}>
+                    <Text className="profile-detail-label">{label}</Text>
+                    <Text className="profile-detail-value">{value}</Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+            <Button
+              className="row-button button profile-detail-close"
+              onClick={() => setSelectedPerson(null)}
+            >
+              关闭
+            </Button>
+          </View>
+        </View>
       )}
     </View>
   );

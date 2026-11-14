@@ -345,9 +345,25 @@ page {
 .participant-row {
   display: flex;
   align-items: center;
+  width: 100%;
   gap: 20rpx;
   padding: 24rpx;
   border-bottom: 1rpx solid #f0f0ec;
+}
+.participant-row-button {
+  border-radius: 0;
+  background: #fff;
+  color: #282f28;
+  line-height: 1.5;
+  text-align: left;
+}
+.participant-row-button::after {
+  border: 0;
+}
+.participant-more {
+  flex-shrink: 0;
+  color: #426b4e;
+  font-size: 22rpx;
 }
 .person-avatar {
   width: 72rpx;
@@ -357,6 +373,68 @@ page {
   border-radius: 50%;
   background: #e8ede1;
   color: #426b4e;
+}
+.profile-detail-mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(28, 35, 29, 0.46);
+}
+.profile-detail-sheet {
+  width: 100%;
+  max-height: 82vh;
+  box-sizing: border-box;
+  padding: 32rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
+  border-radius: 32rpx 32rpx 0 0;
+  background: #f7f4ee;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+.profile-detail-heading {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+.profile-detail-avatar {
+  flex-shrink: 0;
+  font-size: 30rpx;
+}
+.profile-detail-name {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+.profile-detail-scroll {
+  max-height: 58vh;
+}
+.profile-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #e2e5db;
+}
+.profile-detail-label {
+  color: #72786c;
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+.profile-detail-value {
+  color: #282f28;
+  font-size: 28rpx;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.profile-detail-close {
+  flex-shrink: 0;
 }
 .choice-row {
   padding: 32rpx;

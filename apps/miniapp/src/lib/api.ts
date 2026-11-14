@@ -1,6 +1,8 @@
 import Taro from '@tarojs/taro';
-declare const API_BASE: string;
-declare const DEV_AUTH: boolean;
+import { getRuntimePlatform, resolveApiBase } from './api-base';
+const runtimePlatform = getRuntimePlatform();
+const apiBase = resolveApiBase(runtimePlatform);
+const devAuth = runtimePlatform === 'devtools';
 // 原小程序仍使用同一 AppID：首次读取时复制旧存储键，避免改名丢失身份和当前活动。
 function readStorage(key: string): string {
   const current = Taro.getStorageSync<string>(key);
@@ -15,7 +17,7 @@ function readStorage(key: string): string {
   return legacy || '';
 }
 // 开发身份与真实微信登录凭证隔离，切换构建后必须重新建立正确身份。
-const tokenKey = DEV_AUTH ? 'qinggairugu.devToken' : 'qinggairugu.wechatToken';
+const tokenKey = devAuth ? 'qinggairugu.devToken' : 'qinggairugu.wechatToken';
 export function currentSessionId() {
   return readStorage('qinggairugu.session') || '';
 }
@@ -30,7 +32,7 @@ export async function request<T>(
 ): Promise<T> {
   const token = readStorage(tokenKey);
   const response = await Taro.request<{ error?: string }>({
-    url: API_BASE + path,
+    url: apiBase + path,
     method,
     data,
     header: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -51,7 +53,7 @@ export function login() {
   if (readStorage(tokenKey)) return Promise.resolve();
   loginPromise ??= (async () => {
     let code: string;
-    if (DEV_AUTH) {
+    if (devAuth) {
       let identity = readStorage('qinggairugu.devIdentity');
       if (!identity) {
         identity = `dev:${Date.now()}-${Math.random().toString(36).slice(2)}`;

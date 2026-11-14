@@ -117,6 +117,17 @@ export async function ensureCloudSession(id: string) {
 export async function shareSession(id: string) {
   await ensureCloudSession(id);
   const cloudId = await cloudSessionId(id);
+  // 新版 App 生成加入码时，本场参与者可以互相查看「关于我」。
+  // 服务端已有发起人权限校验；同一个二维码也会立即应用到旧场次。
+  await cloudRequest(`/sessions/${cloudId}`, 'PATCH', {
+    participantVisibility: 'everyone',
+  });
+  await (
+    await getDatabase()
+  ).runAsync(
+    "UPDATE sessions SET participant_visibility='everyone' WHERE id=?",
+    id,
+  );
   return cloudRequest<{
     mode: string;
     miniappPath: string;

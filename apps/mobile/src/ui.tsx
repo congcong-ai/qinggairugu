@@ -16,16 +16,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@qinggairugu/design-tokens';
-export function Page({ children }: PropsWithChildren) {
+export function Page({
+  children,
+  bottomInset,
+}: PropsWithChildren<{ bottomInset?: boolean }>) {
   const path = usePathname();
   const { width } = useWindowDimensions();
   const back = !['/', '/records', '/people', '/me', '/recording'].includes(
     path,
   );
+  const includeBottomInset = bottomInset ?? path === '/privacy';
   return (
     <SafeAreaView
       style={styles.safe}
-      edges={back || path === '/recording' ? ['top', 'bottom'] : ['top']}
+      edges={includeBottomInset ? ['top', 'bottom'] : ['top']}
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
